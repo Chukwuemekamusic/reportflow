@@ -11,6 +11,7 @@ class Tenant(UUIDMixin, TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     
     # Relationships
-    users: Mapped[list["User"]] = relationship("User", back_populates="tenant") 
+    users: Mapped[list["User"]] = relationship("User", back_populates="tenant")
     schedules: Mapped[list["Schedule"]] = relationship("Schedule", back_populates="tenant")
-    report_jobs: Mapped[list["ReportJob"]] = relationship("ReportJob", back_populates="tenant") 
+    report_jobs: Mapped[list["ReportJob"]] = relationship("ReportJob", back_populates="tenant")
+    dlq_entries: Mapped[list["DeadLetterQueue"]] = relationship("DeadLetterQueue", back_populates="tenant") 

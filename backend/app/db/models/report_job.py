@@ -1,4 +1,4 @@
-from sqlalchemy import String, SmallInteger, Text, TIMESTAMP, ForeignKey
+from sqlalchemy import String, SmallInteger, Text, TIMESTAMP, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
@@ -31,3 +31,15 @@ class ReportJob(UUIDMixin, TimestampMixin, Base):
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="report_jobs")
     user: Mapped["User"] = relationship("User", back_populates="report_jobs")
     schedule: Mapped["Schedule"] = relationship("Schedule", back_populates="report_jobs")
+    dlq_entry: Mapped["DeadLetterQueue"] = relationship("DeadLetterQueue", back_populates="report_job", uselist=False)
+    
+     # ── Table-level constraints & indexes ────────────────────────────
+    __table_args__ = (
+        # Idempotency enforced at DB level — not just application level
+        UniqueConstraint("tenant_id", "idempotency_key", name="uq_jobs_tenant_idempotency"),
+        # Indexes on every column used in WHERE or ORDER BY
+        Index("idx_jobs_tenant",   "tenant_id"),
+        Index("idx_jobs_user",     "user_id"),
+        Index("idx_jobs_status",   "status"),
+        Index("idx_jobs_created",  "created_at"),
+    )

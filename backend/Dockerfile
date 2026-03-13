@@ -1,11 +1,16 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 WORKDIR /app
 
-# install system dependencies (WeasyPrint needs these in phase 3)
-
+# Install system dependencies
+# libpq-dev + gcc: PostgreSQL client + compilation
+# curl: health checks
+# WeasyPrint deps: libpango, cairo, gdk-pixbuf (HTML/CSS → PDF rendering)
 RUN apt-get update && apt-get install -y \
     libpq-dev gcc curl \
+    libpango-1.0-0 libpangoft2-1.0-0 \
+    libcairo2 libgdk-pixbuf-2.0-0 \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 

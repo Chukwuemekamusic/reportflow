@@ -49,3 +49,23 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
         services=services,
         version="0.1.0"
     )
+    
+    
+    
+# @router.get("/health")
+# async def health_check(db: AsyncSession = Depends(get_db)):
+#     """
+#     Returns 200 if the API is running and DB is reachable.
+#     Returns 503 if any dependency is unhealthy.
+#     """
+#     try:
+#         await db.execute(text("SELECT 1"))
+#         db_status = "healthy"
+#     except Exception as e:
+#         db_status = f"unhealthy: {str(e)}"
+
+#     return {
+#         "status": "ok" if db_status == "healthy" else "degraded",
+#         "database": db_status,
+#         "version": "1.0.0",
+#     }
