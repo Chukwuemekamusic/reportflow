@@ -1,8 +1,13 @@
+import asyncio
+
 from celery import Celery
+from celery.signals import worker_process_init, worker_process_shutdown
 from kombu import Queue, Exchange
 from app.core.config import get_settings
 
 settings = get_settings()
+
+_worker_loop: asyncio.AbstractEventLoop | None = None
 
 # Create the Celery app instance
 celery_app = Celery(
@@ -68,9 +73,46 @@ def get_queue_for_priority(priority: int) -> str:
     return PRIORITY_TO_QUEUE.get(priority, "default")
 
 
-# def route_task(name, args, kwargs, options, task=None, **kw):
-#     priority = kwargs.get('priority', 5)
-#     queue = PRIORITY_TO_QUEUE.get(priority, 'default')
-#     return {'queue': queue}
+def get_worker_loop() -> asyncio.AbstractEventLoop:
+    """Return the persistent worker loop, creating one lazily if needed."""
+    global _worker_loop
+
+    if _worker_loop is None or _worker_loop.is_closed():
+        _worker_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(_worker_loop)
+    return _worker_loop
 
 
+def run_async(coro):
+    """Run a coroutine on the worker's persistent event loop."""
+    return get_worker_loop().run_until_complete(coro)
+
+
+@worker_process_init.connect
+def init_worker_loop(**kwargs):
+    """Initialise a fresh event loop and DB pool for each Celery worker process."""
+    global _worker_loop
+
+    from app.db.base import engine
+
+    _worker_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(_worker_loop)
+    _worker_loop.run_until_complete(engine.dispose())
+
+
+@worker_process_shutdown.connect
+def shutdown_worker_loop(**kwargs):
+    """Dispose DB resources and close the worker event loop on shutdown."""
+    global _worker_loop
+
+    if _worker_loop is None or _worker_loop.is_closed():
+        return
+
+    from app.db.base import engine
+
+    try:
+        _worker_loop.run_until_complete(engine.dispose())
+    finally:
+        _worker_loop.close()
+        asyncio.set_event_loop(None)
+        _worker_loop = None

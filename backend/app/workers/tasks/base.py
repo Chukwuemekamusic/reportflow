@@ -1,9 +1,9 @@
-import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from celery import Task
 import redis as redis_sync
 from app.core.config import get_settings
+from app.workers.celery_app import run_async
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -31,7 +31,7 @@ class ReportBaseTask(Task):
         1. UPDATE report_jobs SET progress=%, status='running' WHERE id=job_id
         2. PUBLISH progress event to Redis channel job:{job_id}
         """
-        asyncio.run(self._async_update_progress(job_id, progress, stage))
+        run_async(self._async_update_progress(job_id, progress))
         self._publish_event(
             job_id, {
                 "event": "progress",
@@ -43,10 +43,10 @@ class ReportBaseTask(Task):
         )
         logger.info(f"[{job_id}] Progress: {progress}% — {stage}")
         
-    async def _async_update_progress(self, job_id: str, progress: int, stage: str):
+    async def _async_update_progress(self, job_id: str, progress: int):
         from app.db.base import AsyncSessionLocal
         from app.db.models.report_job import ReportJob
-        from sqlalchemy import update, select, func
+        from sqlalchemy import update, func
 
         async with AsyncSessionLocal() as session:
             
@@ -74,7 +74,10 @@ class ReportBaseTask(Task):
         if not job_id:
             logger.error(f"job_id not found in kwargs: {kwargs}")
             return
-        asyncio.run(self._async_on_success(job_id, retval))
+        try:
+            run_async(self._async_on_success(job_id, retval))
+        except Exception as e:
+            logger.error(f"[{job_id}] Failed to update job status on success: {e}")
         self._publish_event(job_id, {
                 "event": "completed",
                 "job_id": job_id,
@@ -90,7 +93,6 @@ class ReportBaseTask(Task):
         
         now = datetime.now(timezone.utc)
         async with AsyncSessionLocal() as session:
-            # 2. Update job status in DB
             await session.execute(
                 update(ReportJob).where(ReportJob.id == job_id).values(
                     status="completed",
@@ -114,7 +116,11 @@ class ReportBaseTask(Task):
         
         error_message = str(exc) if exc else "Unknown error"
         error_trace = str(einfo) if einfo else "No traceback available"
-        asyncio.run(self._async_on_failure(job_id, error_message, error_trace))
+        try:
+            run_async(self._async_on_failure(job_id, error_message, error_trace))
+        except Exception as e:
+            logger.error(f"[{job_id}] Failed to update job status on failure: {e}")
+
         self._publish_event(job_id, {
             "event": "failed",
             "job_id": job_id,
@@ -128,7 +134,6 @@ class ReportBaseTask(Task):
         from app.db.models.dead_letter import DeadLetterQueue
         from sqlalchemy import update, select
 
-        # 1. Update job status in DB
         async with AsyncSessionLocal() as session:
             await session.execute(
                 update(ReportJob).where(ReportJob.id == job_id).values(
@@ -136,17 +141,13 @@ class ReportBaseTask(Task):
                     error_message=error_message,
                 )
             )
-            await session.commit()
-
-            # 2. Load job to get tenant_id and retry_count for DLQ record
-        async with AsyncSessionLocal() as session:
             result = await session.execute(select(ReportJob).where(ReportJob.id == job_id))
             job = result.scalar_one_or_none()
             if not job:
                 logger.error(f"Job not found in DB: {job_id}")
+                await session.commit()
                 return
 
-            # 3. Insert DLQ record
             dlq = DeadLetterQueue(
                 job_id=job_id,
                 tenant_id=job.tenant_id,
@@ -167,7 +168,10 @@ class ReportBaseTask(Task):
         if not job_id:
             logger.error(f"job_id not found in kwargs: {kwargs}")
             return
-        asyncio.run(self._async_on_retry(job_id))
+        try:
+            run_async(self._async_on_retry(job_id))
+        except Exception as e:
+            logger.error(f"[{job_id}] Failed to update job status on retry: {e}")
         logger.warning(f"[{job_id}] Retrying after: {exc}")
         
     async def _async_on_retry(self, job_id: str):

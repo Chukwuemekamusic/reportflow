@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # File Storage (MinIO / S3)
     storage_backend: str = "minio"
     minio_endpoint: str = "http://minio:9000"
+    minio_public_endpoint: str | None = None  # Public-facing endpoint for presigned URLs (e.g., http://localhost:9000)
     minio_access_key: str = "minioadmin"
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "reportflow-files"

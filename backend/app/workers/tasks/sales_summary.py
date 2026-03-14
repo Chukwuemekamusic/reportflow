@@ -1,11 +1,11 @@
-import logging 
-from datetime import datetime, datetime, timezone
-from decimal import Decimal
-from sqlalchemy import select, func
-from app.workers.celery_app import celery_app
+import logging
+from datetime import datetime, timezone
+
+from sqlalchemy import select
+
+from app.workers.celery_app import celery_app, run_async
 from app.workers.tasks.base import ReportBaseTask
 from app.core.config import get_settings
-import asyncio
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -31,7 +31,7 @@ def run_sales_summary(self, job_id: str, tenant_id: str, filters: dict):
     try:
         # ── 1. Fetch subscription data ───────────────────────────────────
         self.update_progress(job_id, 5, "Connecting to database...", eta_secs=90)
-        data = asyncio.run(_fetch_subscription_data(filters))
+        data = run_async(_fetch_subscription_data(filters))
         self.update_progress(job_id, 30, f"Fetched {len(data['subscriptions'])} subscriptions", eta_secs=70)
         
         # ── 2. Aggregate MRR metrics ─────────────────────────────────────
@@ -74,9 +74,9 @@ async def _fetch_subscription_data(filters: dict) -> dict:
         
         # Apply filters
         if filters.get("date_from"):
-            query = query.where(Subscription.start_date >= filters["date_from"])
+            query = query.where(Subscription.started_at >= filters["date_from"])
         if filters.get("date_to"):
-            query = query.where(Subscription.start_date <= filters["date_to"])
+            query = query.where(Subscription.started_at <= filters["date_to"])
         if filters.get("region"):
             query = query.where(Customer.region == filters["region"])
         if filters.get("status") and filters["status"] != "all":

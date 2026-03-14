@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 import aioboto3
 from botocore.exceptions import ClientError
 from app.core.config import get_settings
-import asyncio as _asyncio
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,14 +71,20 @@ async def upload_file(
         return object_key
     
 # presigned download url
-async def generate_presigned_download_url(object_key: str, expires_in: int | None = None ) -> str:
+async def generate_presigned_url(object_key: str, expires_in: int | None = None ) -> str:
     """
     Generate a time-limited presigned URL for direct client download.
     expires_in: seconds until URL expires (defaults to settings.file_expiry_seconds)
     """
     expiry_seconds = expires_in or settings.file_expiry_seconds
     session = _get_session()
-    async with session.client("s3", **_get_client_kwargs()) as s3:
+
+    # Use public endpoint for presigned URLs if configured, otherwise use internal endpoint
+    client_kwargs = _get_client_kwargs()
+    if settings.minio_public_endpoint:
+        client_kwargs["endpoint_url"] = settings.minio_public_endpoint
+
+    async with session.client("s3", **client_kwargs) as s3:
         url = await s3.generate_presigned_url(
             ClientMethod="get_object",
             Params={"Bucket": settings.minio_bucket, "Key": object_key},
@@ -97,4 +102,6 @@ def upload_file_sync(
     content_type: str = "application/octet-stream",
 ) -> str:
     """Sync wrapper for upload_file(), safe to call from Celery tasks."""
-    return _asyncio.run(upload_file(file_bytes, object_key, content_type))
+    from app.workers.celery_app import run_async
+
+    return run_async(upload_file(file_bytes, object_key, content_type))
