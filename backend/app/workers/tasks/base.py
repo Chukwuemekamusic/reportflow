@@ -125,34 +125,36 @@ class ReportBaseTask(Task):
     async def _async_on_failure(self, job_id: str, error_message: str, error_trace: str):
         from app.db.base import AsyncSessionLocal
         from app.db.models.report_job import ReportJob
-        from app.db.models.dead_letter_queue import DeadLetterQueue
+        from app.db.models.dead_letter import DeadLetterQueue
         from sqlalchemy import update, select
-        
+
         async with AsyncSessionLocal() as session:
-            
+            # 1. Update job status to failed
             await session.execute(
                 update(ReportJob).where(ReportJob.id == job_id).values(
                     status="failed",
                     error_message=error_message,
                 )
             )
-            
-        # load job to get tenant_id and user_id and retry_count for DLQ record
-        result = await session.execute(select(ReportJob).where(ReportJob.id == job_id))
-        job = result.scalar_one_or_none()
-        if not job:
-            logger.error(f"Job not found in DB: {job_id}")
-            return
-        # 2. Insert DLQ record
-        dlq = DeadLetterQueue(
-            job_id=job_id,
-            tenant_id=job.tenant_id,
-            error_trace=error_trace,
-            retry_count=job.retry_count,
-            last_error_at=datetime.now(timezone.utc),
-        )
-        session.add(dlq)
-        await session.commit()
+            await session.commit()
+
+            # 2. Load job to get tenant_id and retry_count for DLQ record
+            result = await session.execute(select(ReportJob).where(ReportJob.id == job_id))
+            job = result.scalar_one_or_none()
+            if not job:
+                logger.error(f"Job not found in DB: {job_id}")
+                return
+
+            # 3. Insert DLQ record
+            dlq = DeadLetterQueue(
+                job_id=job_id,
+                tenant_id=job.tenant_id,
+                error_trace=error_trace,
+                retry_count=job.retry_count,
+                last_error_at=datetime.now(timezone.utc),
+            )
+            session.add(dlq)
+            await session.commit()
         
     
     def on_retry(self, exc, task_id: str, args, kwargs, einfo):

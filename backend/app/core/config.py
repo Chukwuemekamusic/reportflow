@@ -1,7 +1,13 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # Ignore extra env vars like TOKEN
+    )
+
     # Application
     app_env: str = "development"
     secret_key: str 
@@ -38,11 +44,7 @@ class Settings(BaseSettings):
     # Seed
     seed_customers: int = 500
     seed_subscriptions: int = 1200
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        
+
 @lru_cache()
 def get_settings():
     return Settings()

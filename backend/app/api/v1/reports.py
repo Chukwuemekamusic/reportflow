@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db, get_current_user
 from app.db.models.user import User
@@ -92,3 +93,30 @@ async def cancel_report(
     if job.status not in ("queued", "running", "cancelled"):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Job is {job.status} and cannot be cancelled")
     
+
+# TODO: LOOK AT
+@router.get(
+    "/{job_id}/download",
+    summary="Download a completed report file (redirects to presigned URL)",
+)
+async def download_report(
+    job_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    job = await report_service.get_job(job_id, current_user, db)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != "completed":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Report is not ready (status: {job.status})"
+        )
+    if not job.result_file_key:
+        raise HTTPException(status_code=500, detail="File key missing — contact support")
+
+    from app.services.storage_service import generate_presigned_url
+    url = await generate_presigned_url(job.result_file_key)
+    
+    # 302 REDIRECT - client will follow the redirect to the presigned URL
+    return RedirectResponse(url, status_code=302)

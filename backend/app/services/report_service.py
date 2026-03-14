@@ -59,7 +59,7 @@ async def create_report_job(
     from app.workers.celery_app import get_queue_for_priority
     
     task_map = {
-        "sales_summary": "app.workers.tasks.sales_summary.generate_sales_summary",
+        "sales_summary": "app.workers.tasks.sales_summary.run_sales_summary",
         "csv_export": "app.workers.tasks.csv_export.generate_csv_report",
         "pdf_report": "app.workers.tasks.pdf_report.generate_pdf_report",
     }
