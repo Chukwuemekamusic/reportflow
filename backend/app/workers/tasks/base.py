@@ -128,8 +128,8 @@ class ReportBaseTask(Task):
         from app.db.models.dead_letter import DeadLetterQueue
         from sqlalchemy import update, select
 
+        # 1. Update job status in DB
         async with AsyncSessionLocal() as session:
-            # 1. Update job status to failed
             await session.execute(
                 update(ReportJob).where(ReportJob.id == job_id).values(
                     status="failed",
@@ -139,6 +139,7 @@ class ReportBaseTask(Task):
             await session.commit()
 
             # 2. Load job to get tenant_id and retry_count for DLQ record
+        async with AsyncSessionLocal() as session:
             result = await session.execute(select(ReportJob).where(ReportJob.id == job_id))
             job = result.scalar_one_or_none()
             if not job:
