@@ -24,6 +24,10 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
     return encoded_jwt
 
 def decode_access_token(token: str) -> dict | None:
+    """
+    Decode and validate a JWT. Returns the payload dict, or None if invalid.
+    Used by the WebSocket handler which can't raise HTTPException.
+    """
     try:
         payload = jwt.decode(token, settings.secret_key, algorithms=[settings.jwt_algorithm])
         return payload

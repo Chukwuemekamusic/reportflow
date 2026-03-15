@@ -16,8 +16,8 @@ celery_app = Celery(
     backend=settings.celery_result_backend,
     include=[
         "app.workers.tasks.sales_summary",  # phase 1
-        # "app.workers.tasks.csv_export",  # phase 3
-        # "app.workers.tasks.pdf_report",  # phase 3
+        "app.workers.tasks.csv_export",  # phase 3
+        "app.workers.tasks.pdf_report",  # phase 3
     ],
 )
 

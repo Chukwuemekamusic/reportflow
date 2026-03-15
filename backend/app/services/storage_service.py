@@ -71,13 +71,22 @@ async def upload_file(
         return object_key
     
 # presigned download url
-async def generate_presigned_url(object_key: str, expires_in: int | None = None ) -> str:
+async def generate_presigned_url(
+    object_key: str, 
+    expires_in: int | None = None, 
+    filename_hint: str | None = None
+) -> str:
     """
     Generate a time-limited presigned URL for direct client download.
     expires_in: seconds until URL expires (defaults to settings.file_expiry_seconds)
     """
     expiry_seconds = expires_in or settings.file_expiry_seconds
     session = _get_session()
+    
+    response_headers = {}
+    if filename_hint:
+        response_headers["ResponseContentDisposition"] = f'attachment; filename="{filename_hint}"'
+
 
     # Use public endpoint for presigned URLs if configured, otherwise use internal endpoint
     client_kwargs = _get_client_kwargs()
@@ -87,7 +96,11 @@ async def generate_presigned_url(object_key: str, expires_in: int | None = None 
     async with session.client("s3", **client_kwargs) as s3:
         url = await s3.generate_presigned_url(
             ClientMethod="get_object",
-            Params={"Bucket": settings.minio_bucket, "Key": object_key},
+            Params={
+                "Bucket": settings.minio_bucket, 
+                "Key": object_key, 
+                **response_headers
+            },
             ExpiresIn=expiry_seconds,
         )
     return url

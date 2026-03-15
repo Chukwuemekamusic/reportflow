@@ -10,6 +10,15 @@ from app.schemas.report import (
     ReportJobFilters, )
 from app.services import report_service
 
+# websocket
+import asyncio, json 
+from fastapi import WebSocket, WebSocketDisconnect, status as ws_status
+import redis.asyncio as aioredis
+from app.core.security import decode_access_token
+from app.core.config import get_settings
+
+setting = get_settings()
+
 router = APIRouter()
 
 @router.post("", response_model=ReportJobResponse, status_code=status.HTTP_201_CREATED, summary="Submit a new report gemneration job")
@@ -114,9 +123,114 @@ async def download_report(
         )
     if not job.result_file_key:
         raise HTTPException(status_code=500, detail="File key missing — contact support")
+    
+    # Determine extension from the object key
+    ext = job.result_file_key.rsplit(".", 1)[-1] if "." in job.result_file_key else "bin"
+    filename = f"report-{job_id[:8]}.{ext}"
 
     from app.services.storage_service import generate_presigned_url
-    url = await generate_presigned_url(job.result_file_key)
+    url = await generate_presigned_url(job.result_file_key, filename_hint=filename)
     
     # 302 REDIRECT - client will follow the redirect to the presigned URL
     return RedirectResponse(url, status_code=302)
+
+
+# ── WebSocket progress stream ────────────────────────────────────────
+@router.websocket("/{job_id}/stream")
+async def stream_report_progress(
+    websocket: WebSocket,
+    job_id: str,
+    token: str | None = Query(None), # passed as ?token=xyz...
+):
+    """
+    WebSocket endpoint — streams real-time progress events for a report job.
+
+    Flow:
+      1. Validate JWT from query param (browsers can't send custom WS headers)
+      2. Verify the job exists and belongs to the requesting user's tenant
+      3. Subscribe to Redis pub/sub channel job:{job_id}
+      4. Forward each event as a JSON text frame
+      5. Close on "completed" / "failed" event, or on client disconnect
+    """
+    # Accept connection first (required before sending close codes with reasons)
+    await websocket.accept()
+
+    # 1. Validate JWT from query param
+    if not token:
+        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Missing token")
+        return
+    payload = decode_access_token(token)
+    if not payload:
+        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
+        return
+
+    tenant_id = payload.get("tenant_id")
+
+    # 2. Verify the job exists and belongs to the tenant
+    from app.db.base import AsyncSessionLocal
+    from app.db.models.report_job import ReportJob
+    from sqlalchemy import select
+
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(
+            select(ReportJob).where(
+                ReportJob.id == job_id,
+                ReportJob.tenant_id == tenant_id,
+            )
+        )
+        job = result.scalar_one_or_none()
+
+    if not job:
+        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Job not found")
+        return
+    
+    # 3. If job already finished, send final event and close
+    if job.status in ("completed", "failed"):
+        if job.status == "completed":
+            await websocket.send_text(json.dumps({
+                "event": "completed",
+                "job_id": job_id,
+                "progress": 100,
+                "download_url": f"/api/v1/reports/{job_id}/download",
+            }))
+        else:
+            await websocket.send_text(json.dumps({
+                "event": "failed",
+                "job_id": job_id,
+                "error_message": job.error_message or "Unknown error",
+            }))
+        await websocket.close()
+        return
+
+    # 4. Subscribe to Redis pub/sub channel and stream events
+    redis_client = aioredis.Redis.from_url(setting.redis_pubsub_url, decode_responses=True)
+    
+    try:
+        async with redis_client.pubsub() as pubsub:
+            await pubsub.subscribe(f"job:{job_id}")
+            
+            async for message in pubsub.listen():
+                # pubsub.listen() yields control messages (subscribe, unsubscribe, etc.) - skip them
+                if message["type"] != "message":
+                    continue
+                
+                data = message["data"]
+                
+                try:
+                    await websocket.send_text(data)
+                except WebSocketDisconnect:
+                    break
+                
+                # parse the event to decide whether to close 
+                try: 
+                    event = json.loads(data)
+                    if event.get("event") in ("completed", "failed"):
+                        await websocket.close()
+                        break
+                except json.JSONDecodeError:
+                    pass
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await redis_client.close()
+                

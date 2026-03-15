@@ -1,0 +1,594 @@
+customer_name,plan_name,mrr,region
+Hernandez Ltd,Enterprise,3839.0,EMEA
+"Mcdonald, Davis and Roberts",Starter,72.5,AMER
+Barrett LLC,Starter,72.5,EMEA
+Trujillo-Evans,Enterprise,4653.33,APAC
+Johnson-Lewis,Enterprise,3490.0,EMEA
+Soto-Wood,Pro,990.0,AMER
+Ramirez LLC,Enterprise,1396.0,EMEA
+Ellis Group,Pro,594.0,APAC
+Jackson-Lee,Pro,82.5,APAC
+"Moore, Mckay and George",Enterprise,2792.0,AMER
+"Johnson, Mann and Howell",Pro,577.5,AMER
+Rogers Group,Pro,1287.0,APAC
+Williamson Group,Enterprise,349.0,APAC
+"Moore, Mckay and George",Enterprise,3141.0,AMER
+Carroll-Mendoza,Enterprise,6282.0,APAC
+Smith-King,Starter,48.33,APAC
+"Fletcher, Holmes and Taylor",Enterprise,1047.0,EMEA
+Pearson PLC,Enterprise,1396.0,APAC
+Horton Group,Starter,87.0,AMER
+Henderson and Sons,Pro,198.0,APAC
+"Crawford, Oconnell and Reyes",Starter,58.0,EMEA
+"Long, Little and Wilson",Pro,1485.0,AMER
+Rogers Group,Pro,297.0,APAC
+Suarez Group,Starter,72.5,APAC
+Davidson-Edwards,Enterprise,1047.0,APAC
+"Drake, Davis and White",Starter,48.33,EMEA
+"Young, Martin and Bryant",Enterprise,4071.67,EMEA
+Harris Inc,Starter,87.0,EMEA
+Wilson Ltd,Starter,24.17,EMEA
+Riley Group,Pro,990.0,APAC
+Williams Group,Enterprise,4944.17,APAC
+Delacruz Inc,Pro,742.5,AMER
+Fleming PLC,Pro,1072.5,APAC
+"Patterson, Hicks and Dean",Starter,24.17,APAC
+Fox-Dawson,Pro,990.0,APAC
+Ortiz Ltd,Enterprise,2617.5,AMER
+Franklin LLC,Pro,891.0,EMEA
+Vang-Hart,Enterprise,4537.0,APAC
+Johnson-Lane,Starter,48.33,APAC
+Marks PLC,Enterprise,1163.33,EMEA
+Rose-Andrews,Enterprise,4362.5,EMEA
+"Campbell, Wade and Robinson",Pro,990.0,EMEA
+"Lloyd, Mills and Bridges",Enterprise,3490.0,AMER
+"Nguyen, Brown and Krueger",Starter,29.0,APAC
+"Owens, Ryan and Warner",Pro,495.0,EMEA
+Wallace-Mcdonald,Enterprise,5933.0,EMEA
+"Saunders, Williams and Gardner",Pro,577.5,EMEA
+Griffin-Hood,Starter,29.0,AMER
+Adams-Smith,Starter,24.17,APAC
+Wilkinson Inc,Pro,1188.0,EMEA
+Fletcher Group,Enterprise,3490.0,APAC
+Dodson Inc,Pro,693.0,APAC
+Morris Inc,Enterprise,6631.0,EMEA
+Andrews PLC,Pro,907.5,AMER
+Carroll-Mendoza,Enterprise,1163.33,APAC
+"Yoder, Davis and Adams",Pro,825.0,EMEA
+Hall PLC,Pro,297.0,AMER
+Harris Group,Enterprise,4188.0,APAC
+Collier-White,Enterprise,5235.0,APAC
+Giles Group,Starter,72.5,APAC
+"Lee, Salas and Palmer",Enterprise,2908.33,APAC
+Spence-Day,Starter,87.0,AMER
+Griffin-Hood,Starter,87.0,AMER
+Dean-Knapp,Pro,396.0,AMER
+Keller-Phillips,Starter,24.17,APAC
+Myers PLC,Enterprise,2792.0,APAC
+Bowen Inc,Starter,29.0,APAC
+"Beard, Clark and Jackson",Pro,792.0,EMEA
+Woods LLC,Pro,577.5,EMEA
+"Burke, Castro and Davis",Enterprise,6980.0,EMEA
+Young-Gutierrez,Pro,1485.0,AMER
+Liu LLC,Enterprise,3141.0,AMER
+Berry-Lane,Pro,1155.0,APAC
+"Bailey, Chapman and Horton",Starter,24.17,EMEA
+"Thomas, Wilson and Hurley",Starter,29.0,AMER
+"Reid, Carlson and Jones",Enterprise,5235.0,EMEA
+Nguyen PLC,Enterprise,2792.0,AMER
+Brown-Thompson,Pro,82.5,AMER
+Rodriguez Ltd,Enterprise,2792.0,AMER
+Davis PLC,Starter,29.0,AMER
+Irwin LLC,Pro,990.0,APAC
+Johnson Inc,Starter,29.0,APAC
+Alexander-Parker,Starter,87.0,APAC
+Barrett LLC,Pro,1386.0,EMEA
+Delacruz Inc,Starter,87.0,AMER
+Clarke-Lowe,Pro,396.0,APAC
+"Turner, Casey and Jefferson",Enterprise,5235.0,AMER
+Riley-Garcia,Enterprise,4188.0,APAC
+Phillips-Scott,Pro,990.0,APAC
+Rodriguez Ltd,Enterprise,2035.83,AMER
+"Hartman, Obrien and Jones",Pro,1155.0,AMER
+Cole-Norris,Starter,58.0,AMER
+"Palmer, Curtis and Thompson",Enterprise,4188.0,EMEA
+"Keith, Scott and Parks",Starter,58.0,EMEA
+Ho Inc,Starter,87.0,AMER
+Dodson Inc,Pro,891.0,APAC
+Lyons Ltd,Enterprise,6282.0,APAC
+Smith-Lane,Enterprise,3490.0,EMEA
+Williams LLC,Enterprise,1396.0,EMEA
+Thornton Inc,Starter,72.5,EMEA
+"Brown, Hill and Woods",Starter,72.5,EMEA
+Norman-Banks,Enterprise,5816.67,EMEA
+Martinez Ltd,Starter,48.33,AMER
+Miller LLC,Starter,29.0,AMER
+"Smith, Lee and Ramirez",Pro,1386.0,EMEA
+"Villarreal, Mccarthy and Romero",Starter,58.0,EMEA
+Stephens-Thompson,Starter,58.0,AMER
+"Clark, Shepard and Barker",Pro,825.0,APAC
+"Marks, Clements and Moreno",Starter,87.0,AMER
+Adams-Guzman,Pro,412.5,APAC
+Delgado-Sanchez,Pro,577.5,EMEA
+Jones-Moore,Enterprise,4944.17,APAC
+Henderson and Sons,Enterprise,4653.33,APAC
+Harper-Mahoney,Starter,29.0,APAC
+Rodgers and Sons,Starter,87.0,EMEA
+Logan and Sons,Starter,29.0,AMER
+Salazar-Johnson,Pro,330.0,EMEA
+"Scott, Cook and Palmer",Enterprise,5525.83,APAC
+Cooley-Phillips,Pro,693.0,EMEA
+Newton LLC,Pro,198.0,EMEA
+Wright Inc,Starter,58.0,APAC
+"Wyatt, Nguyen and Hogan",Starter,87.0,APAC
+Davis-Mullins,Starter,87.0,APAC
+Price-Cooper,Starter,29.0,EMEA
+"Harris, Mills and Clarke",Pro,1089.0,AMER
+"Nichols, Myers and Hartman",Starter,29.0,EMEA
+Vasquez LLC,Pro,1485.0,APAC
+Williams LLC,Pro,198.0,EMEA
+"Barnes, Hicks and Murray",Pro,891.0,EMEA
+Jordan Inc,Pro,412.5,AMER
+Curtis LLC,Pro,165.0,EMEA
+Koch PLC,Starter,58.0,EMEA
+Willis LLC,Enterprise,4886.0,EMEA
+Thomas LLC,Pro,1485.0,APAC
+Johnson Inc,Pro,1188.0,APAC
+"Thomas, Stewart and Jackson",Starter,58.0,APAC
+Carr and Sons,Enterprise,6282.0,AMER
+Hall PLC,Pro,412.5,AMER
+Taylor-Ray,Starter,48.33,AMER
+Smith-Williams,Pro,495.0,APAC
+Hudson-Brown,Starter,29.0,APAC
+Martinez-Barnett,Starter,29.0,EMEA
+"Terrell, Williams and Brown",Pro,1485.0,EMEA
+Thornton-Knight,Pro,1188.0,EMEA
+"Montoya, Reyes and Adams",Enterprise,5933.0,APAC
+Jackson-Lee,Pro,1089.0,APAC
+Foster-Booker,Enterprise,2094.0,EMEA
+Brown and Sons,Pro,1155.0,EMEA
+Bradley and Sons,Pro,891.0,EMEA
+Jordan Inc,Starter,29.0,AMER
+Williamson Group,Pro,99.0,APAC
+Lucas LLC,Starter,87.0,EMEA
+Myers PLC,Pro,1485.0,APAC
+Valdez-Black,Starter,24.17,APAC
+Taylor Ltd,Starter,24.17,APAC
+Gould-Alvarez,Pro,1386.0,APAC
+"Shannon, Mendoza and Valenzuela",Starter,87.0,EMEA
+Marquez-Miller,Enterprise,3490.0,EMEA
+"Caldwell, Saunders and Short",Enterprise,5584.0,AMER
+Delgado-Sanchez,Enterprise,1396.0,EMEA
+"Olson, Bryant and Rodriguez",Enterprise,1047.0,AMER
+Brown-Harris,Enterprise,4886.0,APAC
+Lucas LLC,Pro,165.0,EMEA
+"Brown, West and Key",Starter,29.0,APAC
+Rodgers and Sons,Starter,72.5,EMEA
+"Bailey, Chapman and Horton",Pro,1386.0,EMEA
+Tate-Jackson,Starter,29.0,AMER
+Stephens-Thompson,Starter,48.33,AMER
+Giles Group,Pro,577.5,APAC
+Lopez-Wilson,Enterprise,5816.67,EMEA
+Hoover LLC,Pro,1237.5,AMER
+Webb and Sons,Starter,48.33,AMER
+Bauer-Chen,Starter,87.0,AMER
+Butler Ltd,Pro,247.5,APAC
+"Bennett, Waller and Smith",Starter,24.17,AMER
+Webb and Sons,Starter,87.0,AMER
+Johnson-Smith,Starter,29.0,EMEA
+Koch PLC,Starter,24.17,EMEA
+Woods LLC,Pro,82.5,EMEA
+"Beard, Clark and Jackson",Pro,1089.0,EMEA
+"Norman, Villanueva and Clay",Starter,58.0,APAC
+Nicholson Ltd,Pro,247.5,AMER
+Bruce-Edwards,Enterprise,5525.83,APAC
+Ho Inc,Enterprise,5525.83,AMER
+"Burnett, George and Ramirez",Enterprise,6980.0,EMEA
+Pollard Inc,Pro,1287.0,EMEA
+Castaneda Ltd,Enterprise,349.0,EMEA
+"Reid, Carlson and Jones",Starter,58.0,EMEA
+Hall PLC,Starter,48.33,AMER
+Harris Group,Starter,48.33,APAC
+Hall PLC,Pro,693.0,AMER
+Obrien Group,Starter,29.0,AMER
+"Saunders, Williams and Gardner",Enterprise,3839.0,EMEA
+"Davis, Hernandez and Rowe",Enterprise,3141.0,EMEA
+Mcdaniel Group,Starter,58.0,AMER
+"Long, Little and Wilson",Pro,330.0,AMER
+Jones Ltd,Starter,87.0,EMEA
+"Moore, Mckay and George",Starter,58.0,AMER
+Ramirez Inc,Pro,495.0,AMER
+"Chandler, Washington and Bowman",Starter,58.0,AMER
+Simpson-Fritz,Enterprise,2094.0,AMER
+"Barnes, Hicks and Murray",Enterprise,1047.0,EMEA
+Myers PLC,Starter,48.33,APAC
+Henderson and Sons,Enterprise,872.5,APAC
+"Green, Cervantes and Smith",Pro,1485.0,AMER
+Butler Ltd,Enterprise,2792.0,APAC
+Owens-Nelson,Enterprise,2443.0,APAC
+Blair-Frederick,Starter,29.0,EMEA
+Bowen Inc,Starter,72.5,APAC
+Jackson-Lee,Pro,577.5,APAC
+Riley-Garcia,Pro,495.0,APAC
+"Neal, Parsons and Lindsey",Enterprise,5525.83,EMEA
+Irwin LLC,Starter,87.0,APAC
+Ho Inc,Enterprise,1047.0,AMER
+"Stephens, Rivera and Gutierrez",Pro,792.0,AMER
+Thomas LLC,Pro,990.0,APAC
+Stephens-Thompson,Starter,87.0,AMER
+"Juarez, Smith and Weaver",Enterprise,4362.5,AMER
+Smith Ltd,Starter,24.17,APAC
+Sheppard-Rangel,Starter,87.0,EMEA
+Hall Ltd,Starter,58.0,APAC
+Wilson Ltd,Starter,48.33,EMEA
+Herrera Ltd,Pro,1155.0,APAC
+Jackson-Hays,Starter,29.0,AMER
+Olson PLC,Pro,1072.5,APAC
+Sanchez-Delgado,Enterprise,290.83,EMEA
+Adams LLC,Enterprise,4071.67,EMEA
+Cooley-Phillips,Enterprise,1047.0,EMEA
+Lopez-Spencer,Enterprise,1047.0,AMER
+Ortiz and Sons,Starter,58.0,EMEA
+Garcia-Green,Pro,1287.0,APAC
+Davidson-Edwards,Enterprise,1047.0,APAC
+Roberts-Kelly,Enterprise,698.0,EMEA
+Ortiz and Sons,Pro,1386.0,EMEA
+Herrera Ltd,Starter,58.0,APAC
+Romero Ltd,Starter,58.0,EMEA
+"Hartman, Obrien and Jones",Pro,495.0,AMER
+Price-Cooper,Pro,297.0,EMEA
+"White, Robles and Tucker",Starter,72.5,AMER
+Nash Group,Enterprise,3199.17,APAC
+"Yoder, Davis and Adams",Enterprise,3839.0,EMEA
+Brown-Waters,Enterprise,4653.33,AMER
+Chavez Group,Starter,72.5,EMEA
+"Hartman, Obrien and Jones",Enterprise,6282.0,AMER
+Wright Inc,Pro,594.0,APAC
+Conley Group,Pro,297.0,EMEA
+"Townsend, Oconnor and Williams",Enterprise,2792.0,EMEA
+Brown-Jackson,Enterprise,5525.83,AMER
+Myers-Dougherty,Enterprise,3490.0,APAC
+King and Sons,Pro,594.0,AMER
+Webb and Sons,Pro,1485.0,AMER
+Scott-Rodriguez,Starter,58.0,EMEA
+Morrison-Neal,Starter,72.5,EMEA
+"Burke, Castro and Davis",Enterprise,4188.0,EMEA
+Jackson-Hays,Starter,24.17,AMER
+Taylor-Riley,Enterprise,1745.0,AMER
+Stewart Ltd,Starter,24.17,EMEA
+Vance-Miller,Pro,1485.0,EMEA
+Adams LLC,Enterprise,5584.0,EMEA
+Hernandez-Acosta,Starter,72.5,APAC
+Smith Ltd,Enterprise,5933.0,AMER
+Hudson Inc,Pro,1386.0,AMER
+"Sanchez, Reed and Cordova",Pro,990.0,AMER
+Marks-Keller,Starter,72.5,AMER
+"Payne, Johnson and Hall",Pro,660.0,AMER
+Dean-Knapp,Starter,87.0,AMER
+"Hartman, Obrien and Jones",Enterprise,5525.83,AMER
+"White, Robles and Tucker",Pro,907.5,AMER
+Delacruz Inc,Pro,792.0,AMER
+Price-Cooper,Pro,594.0,EMEA
+Cox Group,Pro,1386.0,APAC
+Castillo and Sons,Starter,29.0,EMEA
+Rose-Andrews,Starter,58.0,EMEA
+Ho Inc,Pro,693.0,AMER
+Irwin LLC,Pro,1287.0,APAC
+Young-Booth,Starter,87.0,APAC
+Hernandez-Smith,Enterprise,6282.0,APAC
+"Patterson, Hicks and Dean",Enterprise,4188.0,APAC
+"Burnett, George and Ramirez",Pro,165.0,EMEA
+Shaw LLC,Enterprise,5933.0,AMER
+Keller-Ramirez,Pro,412.5,EMEA
+Velez PLC,Enterprise,3839.0,APAC
+James LLC,Starter,29.0,AMER
+"Johnson, Stewart and Bush",Enterprise,1163.33,APAC
+"Castro, Moore and Tyler",Pro,165.0,EMEA
+Johnson-Lewis,Starter,58.0,EMEA
+Morris Inc,Starter,29.0,EMEA
+Parker-White,Starter,29.0,EMEA
+Thomas PLC,Pro,891.0,APAC
+Greene and Sons,Starter,29.0,AMER
+Little LLC,Starter,24.17,AMER
+Davis-Mullins,Starter,87.0,APAC
+Benson Inc,Enterprise,698.0,EMEA
+Pennington Inc,Pro,825.0,EMEA
+Taylor Ltd,Enterprise,4886.0,APAC
+"Madden, Campbell and Johnson",Pro,297.0,AMER
+Wiggins-Myers,Pro,1089.0,EMEA
+Watson Ltd,Pro,330.0,APAC
+"Bennett, Waller and Smith",Starter,48.33,AMER
+Patrick-French,Pro,792.0,APAC
+Delgado-Sanchez,Enterprise,5235.0,EMEA
+Hall-Smith,Enterprise,1745.0,AMER
+Little-Kline,Enterprise,4537.0,AMER
+Hernandez-Acosta,Pro,1072.5,APAC
+Smith Ltd,Starter,29.0,AMER
+Roy Ltd,Starter,24.17,APAC
+Johnson-Smith,Starter,29.0,EMEA
+Delacruz Inc,Enterprise,1745.0,AMER
+Dodson Inc,Starter,58.0,APAC
+"Hess, Hampton and Harper",Pro,792.0,APAC
+Thornton-Knight,Starter,87.0,EMEA
+Vega LLC,Starter,29.0,AMER
+Harper-Washington,Pro,1386.0,AMER
+Vasquez LLC,Starter,58.0,APAC
+Serrano-Miller,Enterprise,3141.0,EMEA
+"Reese, Ferrell and Garrison",Enterprise,3839.0,AMER
+Cross Group,Pro,825.0,EMEA
+Erickson-Guzman,Pro,594.0,AMER
+"Jones, Weiss and Alvarado",Pro,297.0,EMEA
+"Reilly, Gonzales and Grant",Pro,412.5,EMEA
+Ramirez Inc,Pro,1072.5,AMER
+Cross Group,Pro,1237.5,EMEA
+Price-Cooper,Starter,58.0,EMEA
+"Beard, Clark and Jackson",Pro,495.0,EMEA
+Allen-Thomas,Pro,891.0,EMEA
+Williams PLC,Pro,396.0,APAC
+"Keith, Scott and Parks",Pro,165.0,EMEA
+Ramirez PLC,Pro,792.0,EMEA
+Davis-Morris,Enterprise,6282.0,EMEA
+Watson Ltd,Starter,58.0,APAC
+"Shannon, Mendoza and Valenzuela",Pro,297.0,EMEA
+Turner-Holland,Enterprise,1396.0,EMEA
+Price-Cooper,Pro,396.0,EMEA
+Porter PLC,Pro,396.0,APAC
+Obrien Group,Pro,1089.0,AMER
+Long Ltd,Pro,1155.0,EMEA
+"Montoya, Reyes and Adams",Starter,58.0,APAC
+"Davis, Oliver and Schmitt",Starter,29.0,EMEA
+Newton LLC,Pro,990.0,EMEA
+Vasquez LLC,Pro,792.0,APAC
+Lee-Ramirez,Enterprise,4944.17,APAC
+Foster Ltd,Pro,198.0,APAC
+"Williams, Holmes and Griffin",Pro,693.0,APAC
+Conley Group,Starter,72.5,EMEA
+"Thomas, Stewart and Jackson",Starter,72.5,APAC
+"Barnes, Hicks and Murray",Pro,891.0,EMEA
+Lyons Ltd,Starter,72.5,APAC
+Foster-Booker,Enterprise,5235.0,EMEA
+"Juarez, Smith and Weaver",Starter,72.5,AMER
+"Griffin, Dominguez and Melton",Starter,87.0,AMER
+"Thomas, Morris and Smith",Enterprise,3141.0,EMEA
+Mcgrath-Goodman,Starter,48.33,AMER
+"Martin, Johnson and Miller",Starter,58.0,AMER
+Jones Ltd,Pro,396.0,EMEA
+"Madden, Campbell and Johnson",Enterprise,2094.0,AMER
+Brown-Waters,Starter,29.0,AMER
+"Hall, Williams and Woods",Starter,72.5,APAC
+"Beard, Clark and Jackson",Enterprise,1047.0,EMEA
+Benson Ltd,Pro,99.0,EMEA
+Hoover LLC,Pro,693.0,AMER
+Mcdaniel Group,Pro,891.0,AMER
+"Winters, Fox and Olson",Enterprise,5235.0,AMER
+"Patterson, Hicks and Dean",Enterprise,6980.0,APAC
+Benson Inc,Starter,72.5,EMEA
+Berry-Lane,Pro,82.5,APAC
+"Williams, Foster and Cross",Starter,72.5,AMER
+Hall PLC,Enterprise,1163.33,AMER
+Smith-Lane,Enterprise,698.0,EMEA
+Pittman Group,Enterprise,4537.0,APAC
+Henderson-Davis,Enterprise,4537.0,AMER
+"Madden, Campbell and Johnson",Enterprise,4362.5,AMER
+Hopkins LLC,Enterprise,2443.0,APAC
+"Santos, Scott and Horton",Pro,1155.0,EMEA
+Smith-King,Enterprise,698.0,APAC
+"Brown, West and Key",Starter,87.0,APAC
+Benson Inc,Starter,87.0,EMEA
+"Thomas, Morris and Smith",Pro,412.5,EMEA
+Griffin-Hood,Starter,58.0,AMER
+Mccullough LLC,Enterprise,3199.17,APAC
+"White, Robles and Tucker",Starter,29.0,AMER
+Romero Ltd,Enterprise,3199.17,EMEA
+Gallagher LLC,Starter,72.5,APAC
+Alexander-Parker,Pro,891.0,APAC
+Rodgers and Sons,Enterprise,4886.0,EMEA
+Yang-Lopez,Pro,594.0,APAC
+Hawkins Group,Enterprise,4188.0,APAC
+Maldonado Inc,Pro,990.0,EMEA
+Fuller and Sons,Starter,29.0,EMEA
+"Patterson, Gilbert and Mccall",Pro,660.0,AMER
+Garcia-Green,Starter,87.0,APAC
+Ponce-Diaz,Pro,99.0,AMER
+Smith Ltd,Pro,1072.5,APAC
+Henderson and Sons,Enterprise,1745.0,APAC
+Conley Group,Starter,58.0,EMEA
+"White, Robles and Tucker",Starter,29.0,AMER
+Cardenas-Mckay,Pro,198.0,APAC
+Gallagher LLC,Starter,29.0,APAC
+Garcia Group,Starter,48.33,APAC
+Mendez-Reynolds,Pro,792.0,AMER
+Owens-Nelson,Pro,1089.0,APAC
+"Weaver, Rios and Mcdonald",Pro,1485.0,EMEA
+Carter-Lee,Enterprise,4188.0,AMER
+Dean-Knapp,Starter,72.5,AMER
+"Saunders, Williams and Gardner",Starter,87.0,EMEA
+Hernandez Ltd,Pro,1188.0,EMEA
+Hendricks-Frye,Enterprise,4886.0,EMEA
+Smith Ltd,Enterprise,349.0,AMER
+"Lloyd, Mills and Bridges",Pro,396.0,AMER
+Myers PLC,Enterprise,2443.0,APAC
+"Mcintyre, Harrington and Baxter",Enterprise,5235.0,AMER
+Turner-Holland,Starter,87.0,EMEA
+Horn-Villanueva,Pro,594.0,APAC
+Marks PLC,Starter,58.0,EMEA
+"Dixon, Hall and Ortega",Starter,58.0,APAC
+Rodriguez Ltd,Starter,24.17,AMER
+"Thomas, Morris and Smith",Starter,29.0,EMEA
+Ponce-Diaz,Pro,1287.0,AMER
+Johnson-Salas,Enterprise,5584.0,APAC
+King and Sons,Starter,48.33,AMER
+Myers-Dougherty,Enterprise,6282.0,APAC
+"Harris, Mills and Clarke",Pro,412.5,AMER
+Macias PLC,Enterprise,5816.67,EMEA
+Hernandez-Smith,Pro,495.0,APAC
+Sanchez-Delgado,Enterprise,1047.0,EMEA
+Williams LLC,Pro,99.0,EMEA
+"Bryant, Higgins and Wallace",Enterprise,5525.83,AMER
+Collins-Wilkins,Pro,1089.0,AMER
+Benson Inc,Enterprise,4886.0,EMEA
+"Andersen, Rhodes and Nolan",Starter,24.17,EMEA
+Wallace-Mcdonald,Enterprise,1745.0,EMEA
+"Brown, Hughes and Scott",Enterprise,6980.0,APAC
+"Olson, Bryant and Rodriguez",Starter,87.0,AMER
+Knox-Duncan,Pro,412.5,EMEA
+"Payne, Arroyo and Arias",Starter,24.17,AMER
+Zuniga and Sons,Starter,87.0,AMER
+Cherry Group,Pro,330.0,APAC
+Williams Inc,Pro,198.0,EMEA
+Garcia Group,Enterprise,4188.0,APAC
+Zuniga and Sons,Starter,58.0,AMER
+Marquez-Miller,Starter,24.17,EMEA
+"Andersen, Rhodes and Nolan",Starter,29.0,EMEA
+"Wyatt, Nguyen and Hogan",Enterprise,698.0,APAC
+"Thomas, Harper and Mcknight",Starter,87.0,EMEA
+Herrera-Schmidt,Starter,72.5,AMER
+"Martinez, Sanchez and Parker",Starter,87.0,EMEA
+"Moody, Oneill and Richardson",Enterprise,4188.0,AMER
+"Wood, Knox and Goodman",Enterprise,4537.0,EMEA
+Thornton Inc,Enterprise,2908.33,EMEA
+Hernandez-Smith,Enterprise,4886.0,APAC
+"Reese, Ferrell and Garrison",Starter,24.17,AMER
+"Mccall, Mullins and Henderson",Pro,825.0,APAC
+"Johnson, Harris and Burke",Starter,24.17,APAC
+Serrano-Miller,Pro,1072.5,EMEA
+"Campbell, Wade and Robinson",Enterprise,5235.0,EMEA
+Johnson Inc,Enterprise,3490.0,EMEA
+Smith Ltd,Pro,495.0,EMEA
+Johnson-Franklin,Pro,1188.0,AMER
+"Smith, Lee and Ramirez",Enterprise,1745.0,EMEA
+"Townsend, Oconnor and Williams",Starter,87.0,EMEA
+Owens-Nelson,Enterprise,1454.17,APAC
+"Sanchez, Reed and Cordova",Starter,29.0,AMER
+Hawkins Group,Starter,48.33,APAC
+"Simpson, Chen and Dawson",Starter,58.0,EMEA
+"Terrell, Williams and Brown",Starter,72.5,EMEA
+Sanders Ltd,Starter,72.5,AMER
+Shaw-Kirk,Starter,58.0,EMEA
+Obrien Group,Pro,297.0,AMER
+Johnson-Franklin,Enterprise,872.5,AMER
+Klein-Simpson,Enterprise,1745.0,APAC
+"Davidson, Williams and Craig",Enterprise,5933.0,AMER
+Medina-Booker,Starter,72.5,APAC
+"Keith, Scott and Parks",Starter,48.33,EMEA
+Hudson-Brown,Pro,165.0,APAC
+Harrison-Frey,Starter,29.0,APAC
+Vega LLC,Pro,1155.0,AMER
+Reed-Arroyo,Starter,87.0,EMEA
+Adams LLC,Pro,594.0,EMEA
+Pittman Group,Starter,29.0,APAC
+Dunlap PLC,Pro,990.0,EMEA
+"Bailey, Chapman and Horton",Pro,396.0,EMEA
+Serrano-Miller,Starter,29.0,EMEA
+Williams LLC,Starter,48.33,EMEA
+"Brown, West and Key",Enterprise,349.0,APAC
+Lamb-Smith,Starter,58.0,APAC
+Erickson-Guzman,Pro,198.0,AMER
+"Long, Little and Wilson",Starter,24.17,AMER
+Dean-Knapp,Enterprise,5525.83,AMER
+"Moore, Mckay and George",Pro,1237.5,AMER
+Suarez Group,Pro,1287.0,APAC
+Young-Booth,Pro,1485.0,APAC
+"Barnes, Hicks and Murray",Starter,29.0,EMEA
+"Porter, Wagner and Cannon",Starter,48.33,APAC
+Hall PLC,Pro,1089.0,AMER
+Carter-Lee,Enterprise,2792.0,AMER
+Brown-Jackson,Pro,396.0,AMER
+Benson Ltd,Starter,29.0,EMEA
+Wiggins LLC,Pro,330.0,EMEA
+Little LLC,Pro,396.0,AMER
+"Holloway, Mills and Bowen",Enterprise,3839.0,AMER
+"Brown, Stewart and Morgan",Enterprise,4886.0,AMER
+"Fletcher, Holmes and Taylor",Starter,87.0,EMEA
+Vance-Miller,Pro,198.0,EMEA
+"Williams, Foster and Cross",Starter,48.33,AMER
+"Anderson, Hill and Sullivan",Starter,72.5,AMER
+"Brown, Hill and Woods",Starter,48.33,EMEA
+"Burton, Harrell and Hayes",Starter,29.0,AMER
+Medina-Brown,Pro,594.0,APAC
+Bridges PLC,Starter,58.0,APAC
+Soto-Holden,Pro,297.0,APAC
+Rodriguez-Coleman,Enterprise,4071.67,EMEA
+Curtis LLC,Starter,29.0,EMEA
+Landry-Lewis,Pro,825.0,EMEA
+Davidson PLC,Enterprise,4537.0,EMEA
+"Nguyen, Brown and Krueger",Pro,660.0,APAC
+Smith-Lane,Starter,87.0,EMEA
+Harper-Washington,Pro,1089.0,AMER
+Johnson Inc,Pro,577.5,EMEA
+Thomas LLC,Starter,58.0,APAC
+Jackson Inc,Pro,495.0,AMER
+"Townsend, Oconnor and Williams",Starter,87.0,EMEA
+"Fisher, Anderson and Velez",Pro,198.0,APAC
+English Group,Pro,990.0,APAC
+Nicholson Ltd,Pro,82.5,AMER
+Rangel-Weiss,Pro,1188.0,APAC
+Oneal-Ford,Enterprise,581.67,APAC
+Barrett LLC,Starter,29.0,EMEA
+Simpson-Fritz,Starter,24.17,AMER
+Thomas PLC,Pro,1386.0,APAC
+Mendez-Reynolds,Enterprise,4944.17,AMER
+Pennington Inc,Pro,594.0,EMEA
+Obrien Group,Enterprise,5584.0,AMER
+Sanchez-Delgado,Enterprise,2094.0,EMEA
+Mccullough LLC,Starter,87.0,APAC
+Johnson-Rodriguez,Enterprise,4188.0,EMEA
+"Olson, Bryant and Rodriguez",Enterprise,1745.0,AMER
+"Moody, Oneill and Richardson",Pro,247.5,AMER
+"Marshall, Lopez and Farrell",Pro,594.0,APAC
+Johnson-Perez,Pro,660.0,APAC
+Johnson LLC,Pro,792.0,APAC
+Collier-Ayala,Pro,82.5,APAC
+"Lloyd, Mills and Bridges",Starter,72.5,AMER
+Pennington Inc,Enterprise,3839.0,EMEA
+"Reilly, Gonzales and Grant",Pro,412.5,EMEA
+"Payne, Arroyo and Arias",Starter,87.0,AMER
+Foster-Booker,Pro,1072.5,EMEA
+"Patterson, Hicks and Dean",Pro,198.0,APAC
+"Nichols, Myers and Hartman",Starter,87.0,EMEA
+Meyer-Dickerson,Pro,907.5,EMEA
+Davis-Morris,Pro,99.0,EMEA
+Ramirez Inc,Pro,99.0,AMER
+Vasquez LLC,Enterprise,2792.0,APAC
+Sanders Ltd,Starter,87.0,AMER
+Carroll-Mendoza,Starter,24.17,APAC
+Fletcher-Neal,Starter,29.0,AMER
+"Williams, Foster and Cross",Enterprise,5584.0,AMER
+Rose-Andrews,Enterprise,4537.0,EMEA
+Alvarez-Daniels,Starter,58.0,AMER
+Brown Ltd,Pro,891.0,EMEA
+"Smith, Wheeler and Carey",Pro,495.0,EMEA
+"Howe, Novak and Massey",Enterprise,5525.83,APAC
+Welch Ltd,Enterprise,698.0,EMEA
+Brown-Barnett,Enterprise,4362.5,AMER
+Greene and Sons,Starter,72.5,AMER
+Andrews LLC,Starter,87.0,APAC
+Alexander-Parker,Pro,1155.0,APAC
+Andrews LLC,Enterprise,872.5,APAC
+"Wyatt, Nguyen and Hogan",Enterprise,2443.0,APAC
+Thompson-Smith,Starter,48.33,AMER
+Chavez Group,Pro,1485.0,EMEA
+"Drake, Davis and White",Starter,48.33,EMEA
+"Reilly, Gonzales and Grant",Pro,1485.0,EMEA
+"Payne, Johnson and Hall",Pro,1188.0,AMER
+Campbell Inc,Starter,29.0,EMEA
+"Fletcher, Holmes and Taylor",Enterprise,2443.0,EMEA
+Hendricks-Frye,Enterprise,2792.0,EMEA
+Turner-Holland,Enterprise,4188.0,EMEA
+"Montoya, Reyes and Adams",Pro,412.5,APAC
+"Rodriguez, Oliver and Brown",Enterprise,5933.0,APAC
+"Watkins, King and Alvarez",Pro,990.0,AMER
+"Bryant, Higgins and Wallace",Pro,1089.0,AMER
+Wiggins LLC,Starter,29.0,EMEA
+"Thomas, Wilson and Hurley",Pro,495.0,AMER
+Keller-Phillips,Starter,29.0,APAC
+"Valdez, Terrell and Miller",Pro,742.5,AMER
+Henderson and Sons,Starter,72.5,APAC
+Lopez-Spencer,Pro,495.0,AMER
+Obrien Group,Starter,24.17,AMER
+Bridges PLC,Enterprise,4653.33,APAC
+Morrison-Neal,Pro,792.0,EMEA
+"Reese, Ferrell and Garrison",Enterprise,3199.17,AMER
+Bradley and Sons,Starter,29.0,EMEA
+Jackson Inc,Pro,495.0,AMER
+"Mathis, Pratt and Smith",Starter,72.5,AMER
