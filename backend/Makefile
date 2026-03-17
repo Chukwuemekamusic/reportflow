@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration test-flow test-coverage help restart restart-worker restart-service rebuild rebuild-clean curl-register curl-test-token curl-create-token curl-csv-export curl-pdf-report curl-check-job curl-download-report curl-download-file curl-list-jobs
+.PHONY: test test-unit test-integration test-flow test-coverage help restart restart-worker restart-service rebuild rebuild-clean curl-register curl-test-token curl-create-token curl-csv-export curl-pdf-report curl-check-job curl-download-report curl-download-file curl-list-jobs check-user-role set-admin-role
 
 # Default target
 help:
@@ -12,6 +12,8 @@ help:
 	@echo "make migrate           - Apply database migrations"
 	@echo "make migrate-create    - Create new migration (MSG='description')"
 	@echo "make seed              - Seed database with demo data"
+	@echo "make check-user-role   - Check user role (EMAIL='admin@example.com')"
+	@echo "make set-admin-role    - Set user as admin (EMAIL='admin@example.com')"
 	@echo "make shell             - Open Python REPL with app context"
 	@echo "make lint              - Run ruff linter"
 	@echo "make format            - Format code with ruff"
@@ -62,6 +64,20 @@ migrate-create:
 
 seed:
 	docker compose exec api uv run python -m app.db.seed
+
+check-user-role:
+	@if [ -z "$(EMAIL)" ]; then \
+		echo "Error: Please provide EMAIL='user@example.com'"; \
+		exit 1; \
+	fi
+	docker compose exec api sh -c "cd /app && PYTHONPATH=/app uv run python scripts/check_user_role.py '$(EMAIL)'"
+
+set-admin-role:
+	@if [ -z "$(EMAIL)" ]; then \
+		echo "Error: Please provide EMAIL='user@example.com'"; \
+		exit 1; \
+	fi
+	docker compose exec api sh -c "cd /app && PYTHONPATH=/app uv run python scripts/set_admin_role.py '$(EMAIL)'"
 
 # Development
 shell:

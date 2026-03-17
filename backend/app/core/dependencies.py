@@ -54,4 +54,13 @@ async def get_current_admin(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user
 
+async def require_admin(
+    current_user: User = Depends(get_current_admin)
+) -> bool:
+    """
+    FastAPI dependency — yields True if the current user is an admin.
+    Raises 403 if the user is not an admin.
+    """
+    return True
+
 __all__ = ["get_db", "get_current_user", "get_current_admin"]

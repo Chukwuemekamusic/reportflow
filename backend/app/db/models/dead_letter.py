@@ -34,6 +34,8 @@ class DeadLetterQueue(UUIDMixin, Base):
     retry_count: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     last_error_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
     resolved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True), nullable=False)
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="dlq_entries")

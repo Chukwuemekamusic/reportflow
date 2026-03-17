@@ -14,9 +14,8 @@ settings = get_settings()
     bind=True,
     base=ReportBaseTask,
     name="app.workers.tasks.sales_summary.run_sales_summary",
-    max_retries=settings.celery_task_max_retries,
-    default_retry_delay=30,
     acks_late=True,
+    # max_retries and retry timing controlled by ReportBaseTask.apply_async() and .retry()
 )
 def run_sales_summary(self, job_id: str, tenant_id: str, filters: dict):
     """
