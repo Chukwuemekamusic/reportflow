@@ -1,12 +1,16 @@
 import uuid
 import logging
+import redis as _redis
+from fastapi import HTTPException, status
 from datetime import datetime, timezone
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import IntegrityError
 from app.db.models.report_job import ReportJob
 from app.db.models.user import User
 from app.core.config import get_settings
 from app.schemas.report import ReportJobCreate
+from app.core.rate_limit import check_and_increment_active_jobs
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -29,6 +33,22 @@ async def create_report_job(
       3. If not found → INSERT job → enqueue Celery task → return new job, created=True
     """
     # ── 1. Idempotency check ───────────────────────────────────────────
+    # Fast path: Redis cache lookup
+
+    if payload.idempotency_key:
+        cache_key = f"idempotency:{str(current_user.tenant_id)}:{payload.idempotency_key}"
+        r = _redis.Redis.from_url(settings.redis_url, decode_responses=True)
+        cached_job_id = r.get(cache_key)
+        # r.close()
+        if cached_job_id:
+            logger.info(f"Idempotent job found in cache: {cached_job_id}")
+            existing_job = await _get_job_by_id(cached_job_id, current_user, db)
+            if existing_job:
+                return existing_job, False
+            
+    # ── 1b. DB check ───────────────────────────────────────────────────
+    # DB check (covers cache misses and cache disabled)
+    
     if payload.idempotency_key:
         result = await db.execute(
             select(ReportJob)
@@ -37,10 +57,30 @@ async def create_report_job(
         )
         existing = result.scalar_one_or_none()
         if existing:
-            logger.info(f"Idempotent job found: {existing.id}")
+            logger.info(f"Idempotent job hit: {existing.id}")
+            # Update the Redis cache (if enabled)
+            _cache_idempotency_key(
+                current_user.tenant_id, 
+                payload.idempotency_key, 
+                existing.id
+            )
             return existing, False
         
-    # ── 2. Create new job ─────────────────────────────────────────────
+    # ── 2. Rate limiting ───────────────────────────────────────────────
+    
+    allowed = check_and_increment_active_jobs(str(current_user.id))
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "error": "rate_limit_exceeded",
+                "message": f"Maximum {settings.max_concurrent_jobs_per_user} concurrent jobs allowed per user.",
+                "active_jobs": settings.max_concurrent_jobs_per_user,
+            },
+            headers={"Retry-After": "60"},
+        )
+        
+    # ── 3. Create new job ─────────────────────────────────────────────
     job = ReportJob(
         tenant_id=current_user.tenant_id,
         user_id=current_user.id,
@@ -52,7 +92,32 @@ async def create_report_job(
         progress=0,
     )
     db.add(job)
-    await db.flush()
+    
+    try:
+        await db.flush() 
+    except IntegrityError as e:
+        # Race condition: another request inserted the same key between our
+        # SELECT and our INSERT. Roll back and fetch the winner.
+        await db.rollback()
+        result = await db.execute(
+            select(ReportJob).where(
+                ReportJob.tenant_id == current_user.tenant_id,
+                ReportJob.idempotency_key == payload.idempotency_key,
+            )
+        )
+        existing_job = result.scalar_one()
+        return existing_job, False
+    
+    await db.commit()
+    
+    # Cache the new job's idempotency key
+    if payload.idempotency_key:
+        _cache_idempotency_key(
+            current_user.tenant_id, 
+            payload.idempotency_key, 
+            job.id
+        )
+    
     
     # ── 3. Enqueue Celery task ─────────────────────────────────────────
     # Import here to avoid circular imports at module load time
@@ -87,18 +152,12 @@ async def create_report_job(
     logger.info(f"Created job {job.id} ({payload.report_type}) → queue: {queue}")
     return job, True
 
-async def get_job(job_id: str, current_user: User, db: AsyncSession, ) -> ReportJob | None:
+async def get_job(job_id: str, current_user: User, db: AsyncSession) -> ReportJob | None:
     """
     Fetch a job by ID, scoped to the current user's tenant.
-    Returns None if job doesn't exist or belongs to a different tenant.
+    Returns None if the job doesn't exist or belongs to a different tenant.
     """
-    result = await db.execute(
-        select(ReportJob).where(
-            ReportJob.id == job_id,
-            ReportJob.tenant_id == current_user.tenant_id,
-        )
-    )
-    return result.scalar_one_or_none()
+    return await _get_job_by_id(job_id, current_user, db)
     
         
 async def list_jobs(
@@ -131,25 +190,70 @@ async def cancel_job(job_id: str, current_user: User, db: AsyncSession) -> Repor
     Cancel a queued or running job. 
     Revokes the celery task and marks the job as cancelled.
     Returns the updated job or None if not found.
-    """
-    job = await get_job(job_id, current_user, db)
-    if not job:
-        return None
-    if job.status not in ("queued", "running"):
-        logger.warning(f"Cannot cancel job {job_id} — not queued/running")
-        return job
     
-    # revoke the celery task
+    Note: jobs in terminal states (completed, failed, cancelled) are returned
+    as-is without modification.
+    """
+    job = await _get_job_by_id(job_id, current_user, db)
+    if not job:
+        logger.warning(f"[{job_id}] Cannot cancel job — not found")
+        return None
+    
+    if job.status in ("completed", "failed", "cancelled"):
+        logger.warning(f"[{job_id}] Cannot cancel job — status is already '{job.status}'")
+        return job
+        
+    
+    # Revoke the Celery task
+    # terminate=True sends SIGTERM to a running worker process.
+    # For queued jobs it simply prevents the task from being picked up.
     if job.celery_task_id:
         from celery import current_app as celery_app
-        celery_app.control.revoke(job.celery_task_id, terminate=True)
-    
-    await db.execute(
-        update(ReportJob).where(ReportJob.id == job_id).values(
-            status="cancelled",
+        terminate = job.status == "running"
+        celery_app.control.revoke(
+            job.celery_task_id,
+            terminate=terminate,
+            signal="SIGTERM" if terminate else None,
         )
+ 
+    # Update the job status in the database
+    now = datetime.now(timezone.utc)
+    await db.execute(
+        update(ReportJob)
+        .where(ReportJob.id == job_id)
+        .values(status="cancelled", completed_at=now)
     )
-    
     await db.commit()
+ 
+    # Decrement the rate-limit counter — the slot is now free
+    from app.core.rate_limit import decrement_active_jobs
+    decrement_active_jobs(str(current_user.id))
+ 
+    logger.info(f"[{job_id}] Cancelled")
     return job
 
+# ── Private helpers ──────────────────────────────────────────────────────────
+
+async def _get_job_by_id(job_id: str, current_user: User, db: AsyncSession) -> ReportJob | None:
+    """Internal fetch — scoped to the current user's tenant."""
+    result = await db.execute(
+        select(ReportJob).where(
+            ReportJob.id == job_id,
+            ReportJob.tenant_id == current_user.tenant_id,
+        )
+    )
+    return result.scalar_one_or_none()
+
+def _cache_idempotency_key(tenant_id: str, idempotency_key: str, job_id: str) -> None:
+    """Write the idempotency key → job_id mapping to Redis with a 24h TTL."""
+    # Convert UUIDs to strings (SQLAlchemy may pass UUID objects)
+    tenant_id_str = str(tenant_id)
+    job_id_str = str(job_id)
+
+    cache_key = f"idempotency:{tenant_id_str}:{idempotency_key}"
+    try:
+        with _redis.Redis.from_url(settings.redis_url, decode_responses=True) as r:
+            r.setex(cache_key, settings.idempotency_cache_ttl, job_id_str)
+    except Exception as e:
+        # Cache write failure is non-fatal — the DB is the source of truth
+        logger.warning(f"Failed to write idempotency cache for key {idempotency_key}: {e}")

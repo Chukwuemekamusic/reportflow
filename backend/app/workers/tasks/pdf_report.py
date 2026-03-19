@@ -22,12 +22,12 @@ def run_pdf_report(self, job_id: str, tenant_id: str, filters: dict):
     Generate a multi-section PDF report with charts.
 
     Stages:
-      0–25%  : Fetch subscription data
-      25–45% : Aggregate and compute section data
-      45–60% : Render matplotlib charts to SVG
-      60–85% : Render Jinja2 HTML template
-      85–95% : Write PDF via WeasyPrint
-      95–100%: Upload to MinIO
+      0-25%  : Fetch subscription data
+      25-45% : Aggregate and compute section data
+      45-60% : Render matplotlib charts to SVG
+      60-85% : Render Jinja2 HTML template
+      85-95% : Write PDF via WeasyPrint
+      95-100%: Upload to MinIO
     """
     try:
         # ── Stage 1: Fetch data ──────────────────────────────────────

@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     minio_secret_key: str = "minioadmin"
     minio_bucket: str = "reportflow-files"
     file_expiry_seconds: int = 86400  # 24 hours
+    idempotency_cache_ttl: int = 86400  # 24 hours
     
     # Rate Limiting
     max_concurrent_jobs_per_user: int = 5

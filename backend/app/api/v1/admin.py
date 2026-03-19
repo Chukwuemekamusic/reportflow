@@ -22,6 +22,7 @@ async def list_dlq(
     By default returns only unresolved entries (resolved=False).
     Admins can pass ?resolved=true to see resolved entries.
     """
+    print(f"DEBUG: resolved={resolved}, limit={limit}, offset={offset}")
     result = await db.execute(
         select(DeadLetterQueue)
         .where(DeadLetterQueue.resolved == resolved)
@@ -30,22 +31,30 @@ async def list_dlq(
         .offset(offset)
     )
     entries = result.scalars().all()
-    
-    return {
-        "items": [
-            {
+    print(f"DEBUG: Found {len(entries)} entries")
+
+    items = []
+    for entry in entries:
+        try:
+            item = {
                 "id": str(entry.id),
                 "job_id": str(entry.job_id),
                 "tenant_id": str(entry.tenant_id),
                 "retry_count": entry.retry_count,
-                "last_error_at": entry.last_error_at,
+                "last_error_at": entry.last_error_at.isoformat() if entry.last_error_at else None,
                 "error_trace": entry.error_trace,
                 "resolved": entry.resolved,
-                "resolved_at": entry.resolved_at,
-                "created_at": entry.created_at,
+                "resolved_at": entry.resolved_at.isoformat() if entry.resolved_at else None,
+                "created_at": entry.created_at.isoformat() if entry.created_at else None,
             }
-            for entry in entries
-        ],
+            items.append(item)
+        except Exception as e:
+            print(f"DEBUG: Error serializing entry {entry.id}: {e}")
+
+    print(f"DEBUG: Serialized {len(items)} items")
+
+    return {
+        "items": items,
         "total": len(entries),
         "limit": limit,
         "offset": offset,
@@ -99,7 +108,7 @@ async def retry_dlq(
     await db.flush()  # flush to get new_job.id before enqueuing
     
     # ── 4. Enqueue the new job via Celery ───────────────────────────────
-    from app.workers.celery_app import celery_app
+    from app.workers.celery_app import get_queue_for_priority
     from app.workers.tasks import TASK_MAP # {"sales_summary": run_sales_summary, ...}
     task_fn = TASK_MAP[original_job.report_type]
     if not task_fn:
@@ -110,8 +119,9 @@ async def retry_dlq(
             "job_id": str(new_job.id),
             "tenant_id": str(new_job.tenant_id),
             "filters": new_job.filters or {},
-            "priority": new_job.priority,
         },
+        queue=get_queue_for_priority(new_job.priority),
+        priority=new_job.priority,
     )
     new_job.celery_task_id = celery_task.id
     

@@ -1,4 +1,4 @@
-.PHONY: test test-unit test-integration test-flow test-coverage help restart restart-worker restart-service rebuild rebuild-clean curl-register curl-test-token curl-create-token curl-csv-export curl-pdf-report curl-check-job curl-download-report curl-download-file curl-list-jobs check-user-role set-admin-role
+.PHONY: test test-unit test-integration test-flow test-coverage help restart restart-worker restart-service rebuild rebuild-clean curl-register curl-test-token curl-create-token curl-new-token curl-csv-export curl-pdf-report curl-check-job curl-download-report curl-download-file curl-list-jobs check-user-role set-admin-role
 
 # Default target
 help:
@@ -154,6 +154,9 @@ curl-create-token:
 	@curl -s -X POST http://localhost:8000/api/v1/auth/token \
 		-H "Content-Type: application/json" \
 		-d '{"email":"admin@example.com","password":"your-password"}' | jq .
+
+curl-new-token:
+	@$(MAKE) curl-create-token | jq -r ".access_token"
 	
 curl-csv-export:
 	@curl -s -X POST http://localhost:8000/api/v1/reports \

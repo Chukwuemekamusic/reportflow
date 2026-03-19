@@ -4,6 +4,7 @@ from celery import Task
 import redis as redis_sync
 from app.core.config import get_settings
 from app.workers.celery_app import run_async
+from app.core.rate_limit import decrement_active_jobs
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -137,7 +138,7 @@ class ReportBaseTask(Task):
             return
 
         # 1. Free the slot first
-        self._decrement_active_jobs(user_id)
+        decrement_active_jobs(str(user_id))
 
         # 2. Then notify clients (outside transaction)
         self._publish_event(job_id, {
@@ -199,7 +200,7 @@ class ReportBaseTask(Task):
             await session.commit()
 
         # 1. Free the slot first
-        self._decrement_active_jobs(job.user_id)
+        decrement_active_jobs(str(job.user_id))
 
         # 2. Then notify clients (outside transaction)
         self._publish_event(job_id, {
@@ -250,22 +251,6 @@ class ReportBaseTask(Task):
             logger.error(f"[{job_id}] Failed to publish event: {e}")
             
     
-    def _decrement_active_jobs(self, user_id: str):
-        """
-        Decrement the active-job counter for a user on Redis DB 0 (redis_url).
-        Must target the same DB that rate_limit.py uses when incrementing —
-        that's DB 0, NOT the pubsub DB (DB 1).
-        Guards against the counter going negative (e.g. worker crash mid-job).
-        """
-        try:
-            current = _redis_client.decr(f"ratelimit:{user_id}:active_jobs")
-            if current < 0:
-                logger.warning(f"Active jobs counter is negative: {current}")
-                _redis_client.set(f"ratelimit:{user_id}:active_jobs", 0)
-        except Exception as e:
-            logger.error(f"Failed to decrement active jobs counter: {e}")
-        
-        
     
         
     
