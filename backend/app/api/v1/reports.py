@@ -106,7 +106,8 @@ async def cancel_report(
     - Running jobs: SIGTERM sent to the worker executing the task
     - Completed/failed jobs: status updated to 'cancelled' (no-op on Celery side)
 
-    Returns 204 No Content if successful, 404 if job not found.
+    Always returns 200 if the job belongs to the user, even if already complete.
+    Returns 404 if the job does not exist or belongs to another tenant.
     """
     job = await report_service.cancel_job(job_id, current_user, db)
     if not job:

@@ -49,6 +49,7 @@ class ReportJobResponse(BaseModel):
     progress: int = Field(0, ge=0, le=100)
     error_message: str | None = None
     retry_count: int = 0
+    schedule_id: uuid.UUID | None = None
     created_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -65,6 +66,11 @@ class ReportJobListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+class RateLimitErrorResponse(BaseModel):
+    error:       str   # "rate_limit_exceeded"
+    message:     str
+    active_jobs: int
     
 
 # --- Factory: build response from ORM model ---
@@ -82,6 +88,7 @@ def job_to_response(job: ReportJob, base_url: str = "") -> ReportJobResponse:
         progress=job.progress,
         error_message=job.error_message,
         retry_count=job.retry_count,
+        schedule_id=job.schedule_id,
         created_at=job.created_at,
         started_at=job.started_at,
         completed_at=job.completed_at,

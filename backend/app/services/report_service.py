@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from app.db.models.report_job import ReportJob
 from app.db.models.user import User
+from app.db.models.schedule import Schedule
 from app.core.config import get_settings
 from app.schemas.report import ReportJobCreate
 from app.core.rate_limit import check_and_increment_active_jobs
@@ -37,9 +38,8 @@ async def create_report_job(
 
     if payload.idempotency_key:
         cache_key = f"idempotency:{str(current_user.tenant_id)}:{payload.idempotency_key}"
-        r = _redis.Redis.from_url(settings.redis_url, decode_responses=True)
-        cached_job_id = r.get(cache_key)
-        # r.close()
+        with _redis.Redis.from_url(settings.redis_url, decode_responses=True) as r:
+            cached_job_id = r.get(cache_key)
         if cached_job_id:
             logger.info(f"Idempotent job found in cache: {cached_job_id}")
             existing_job = await _get_job_by_id(cached_job_id, current_user, db)
@@ -257,3 +257,50 @@ def _cache_idempotency_key(tenant_id: str, idempotency_key: str, job_id: str) ->
     except Exception as e:
         # Cache write failure is non-fatal — the DB is the source of truth
         logger.warning(f"Failed to write idempotency cache for key {idempotency_key}: {e}")
+        
+    
+async def create_job_from_schedule(db: AsyncSession, schedule: Schedule) -> ReportJob:
+    """
+    Create and enqueue a ReportJob from a Schedule row.
+    Called exclusively by the Beat dispatcher — not by the API.
+    """
+    from app.workers.celery_app import celery_app, get_queue_for_priority
+    
+    job = ReportJob(
+        tenant_id=schedule.tenant_id,
+        user_id=schedule.user_id,
+        schedule_id=schedule.id, # link to the schedule that spawned this job
+        report_type=schedule.report_type,
+        status="queued",
+        priority=schedule.priority,
+        filters=schedule.filters,
+        # no idempotency_key — scheduled jobs are always unique runs
+    )
+    
+    db.add(job)
+    await db.flush() 
+    
+    task_map = {
+        "sales_summary": "app.workers.tasks.sales_summary.run_sales_summary",
+        "csv_export": "app.workers.tasks.csv_export.run_csv_export",
+        "pdf_report": "app.workers.tasks.pdf_report.run_pdf_report",
+    }
+    
+    task_name = task_map[schedule.report_type]
+    queue = get_queue_for_priority(schedule.priority)
+    
+    celery_result = celery_app.send_task(
+        task_name,
+        kwargs={
+            "job_id": str(job.id),
+            "tenant_id": str(schedule.tenant_id),
+            "filters": schedule.filters or {},
+        },
+        queue=queue,
+        priority=schedule.priority,
+    )
+    
+    job.celery_task_id = celery_result.task_id
+    await db.commit()
+    return job
+    

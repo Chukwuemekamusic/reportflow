@@ -64,12 +64,14 @@ async def test_create_job_caches_idempotency_key_in_redis():
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 86400
+            mock_settings.max_concurrent_jobs_per_user = 5
 
-            with patch("celery.current_app") as mock_celery:
-                mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
+            with patch("app.services.report_service.check_and_increment_active_jobs", return_value=True):
+                with patch("celery.current_app") as mock_celery:
+                    mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
 
-                # Act
-                job, created = await create_report_job(payload, current_user, db)
+                    # Act
+                    job, created = await create_report_job(payload, current_user, db)
 
     # Assert - verify Redis setex was called with correct parameters
     expected_cache_key = f"idempotency:{str(tenant_id)}:test-key-123"
@@ -106,6 +108,8 @@ async def test_create_job_returns_cached_job_on_redis_hit():
     # Mock Redis to return a cached job ID
     mock_redis_instance = MagicMock()
     mock_redis_instance.get.return_value = str(cached_job_id)
+    mock_redis_instance.__enter__ = Mock(return_value=mock_redis_instance)
+    mock_redis_instance.__exit__ = Mock(return_value=False)
 
     # Mock DB to return the cached job when queried by ID
     existing_job = SimpleNamespace(
@@ -270,6 +274,8 @@ async def test_idempotency_key_cache_format_is_correct():
 
     mock_redis_instance = MagicMock()
     mock_redis_instance.get.return_value = None
+    mock_redis_instance.__enter__ = Mock(return_value=mock_redis_instance)
+    mock_redis_instance.__exit__ = Mock(return_value=False)
 
     # Mock DB to return no existing job (both for cache check and idempotency check)
     result_mock = Mock()
@@ -287,12 +293,14 @@ async def test_idempotency_key_cache_format_is_correct():
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 86400
+            mock_settings.max_concurrent_jobs_per_user = 5
 
-            with patch("celery.current_app") as mock_celery:
-                mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
+            with patch("app.services.report_service.check_and_increment_active_jobs", return_value=True):
+                with patch("celery.current_app") as mock_celery:
+                    mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
 
-                # Act
-                _ = await create_report_job(payload, current_user, db)
+                    # Act
+                    _ = await create_report_job(payload, current_user, db)
 
     # Assert - verify cache key format: "idempotency:{tenant_id}:{key}"
     expected_cache_key = f"idempotency:{str(tenant_id)}:my-custom-key"
