@@ -1,8 +1,37 @@
-# Python
+# === Common (OS & IDE) ===
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# === Python / Backend ===
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 .env
+.env.local
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
 
 # uv
 # Do NOT gitignore uv.lock — commit it
+
+# === Docker ===
+*.log
+docker-compose.override.yml
+
+# === Database ===
+*.db
+*.sqlite
+*.sqlite3
+
+# === MinIO / Storage ===
+minio-data/

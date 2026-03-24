@@ -11,4 +11,19 @@ export default defineConfig({
       "@": fileURLToPath(new URL("./src", import.meta.url)),
     },
   },
+  server: {
+    watch: {
+      usePolling: true,
+      interval: 1000,
+    },
+    proxy: {
+      "/api": {
+        // in docker
+        target: "http://api:8000",
+        // local
+        // target: "http://localhost:8000",
+        changeOrigin: true,
+      },
+    },
+  },
 });

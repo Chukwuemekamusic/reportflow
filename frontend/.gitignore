@@ -7,12 +7,25 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build outputs
 dist
 dist-ssr
+build
+.vite
+
+# Environment
+.env
+.env.local
+.env.production.local
 *.local
 
-# Editor directories and files
+# Testing
+coverage
+
+# Editor directories and files (redundant with root, but safe)
 .vscode/*
 !.vscode/extensions.json
 .idea
