@@ -1,13 +1,80 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
+
 from app.db.models.report_job import ReportJob
 from app.db.models.dead_letter import DeadLetterQueue
+from app.db.models.tenant import Tenant
+from app.db.models.user import User
+
 from app.core.dependencies import get_db, require_admin
+from app.core.config import get_settings
 from datetime import datetime, timezone
 import uuid
 
+
+
+
+
+settings = get_settings()
+
 router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
+
+@router.get("/jobs", summary="List all report jobs with pagination and filtering")
+async def list_jobs(
+    status: str | None = None,
+    limit: int = 25,
+    offset: int = 0,
+    db: AsyncSession = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    """
+    List all report jobs across all tenants (admin only).
+
+    Query params:
+    - status: Filter by job status (queued, running, completed, failed, cancelled)
+    - limit: Number of results per page (default: 25)
+    - offset: Pagination offset (default: 0)
+    """
+    query = select(ReportJob).order_by(ReportJob.created_at.desc())
+
+    # Apply status filter if provided
+    if status:
+        query = query.where(ReportJob.status == status)
+
+    # Get total count
+    count_query = select(func.count()).select_from(ReportJob)
+    if status:
+        count_query = count_query.where(ReportJob.status == status)
+    total_result = await db.execute(count_query)
+    total = total_result.scalar()
+
+    # Apply pagination
+    query = query.limit(limit).offset(offset)
+
+    result = await db.execute(query)
+    jobs = result.scalars().all()
+
+    return {
+        "jobs": [
+            {
+                "job_id": str(job.id),
+                "tenant_id": str(job.tenant_id),
+                "report_type": job.report_type,
+                "status": job.status,
+                "priority": job.priority,
+                "progress": job.progress,
+                "created_at": job.created_at.isoformat(),
+                "updated_at": job.updated_at.isoformat() if job.updated_at else None,
+                "error_message": job.error_message,
+            }
+            for job in jobs
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
 
 @router.get("/dlq", summary="List all dead letter queue entries")
 async def list_dlq(
@@ -167,4 +234,79 @@ async def purge_dlq_entry(
         "status": "purged",
         "message": "DLQ entry purged",
     }
+    
+# ── Live queue depth ───────────────────────────────────────────────────
+@router.get("/queue", summary="Live queue depth and worker status")
+async def get_queue_status(_admin=Depends(require_admin)):
+    """
+    Query Redis directly for queue lengths.
+    Celery uses a list per queue — LLEN gives the pending task count.
+    """
+    import redis as sync_redis
+    
+    r = sync_redis.from_url(settings.redis_url)
+    
+    return {
+        "queues": {
+            "high":    r.llen("high"),
+            "default": r.llen("default"),
+            "low":     r.llen("low"),
+        },
+        "total_pending": r.llen("high") + r.llen("default") + r.llen("low"),
+    }
 
+# -── Tenant management ───────────────────────────────────────────────────
+@router.get("/tenants", summary="List all tenants with usage stats")
+async def list_tenants(
+    db: AsyncSession = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    result = await db.execute(
+        select(
+            Tenant.id,
+            Tenant.name,
+            Tenant.slug,
+            Tenant.is_active,
+            Tenant.created_at,
+            func.count(ReportJob.id).label("total_jobs"),
+        )
+        .outerjoin(User, User.tenant_id == Tenant.id)
+        .outerjoin(ReportJob, ReportJob.tenant_id == Tenant.id)
+        .group_by(Tenant.id)
+        .order_by(Tenant.created_at.desc())
+    )
+    rows = result.all()
+    return {
+        "tenants": [
+            {
+                "id": str(r.id),
+                "name": r.name,
+                "slug": r.slug,
+                "is_active": r.is_active,
+                "created_at": r.created_at.isoformat(),
+                "total_jobs": r.total_jobs,
+            }
+            for r in rows
+        ],
+        "total": len(rows),
+    }
+    
+@router.put("/tenants/{id}", summary="Enable or disable a tenant")
+async def update_tenant(
+    id: str,
+    body: dict,   # expects {"is_active": bool}
+    db: AsyncSession = Depends(get_db),
+    _admin=Depends(require_admin),
+):
+    from sqlalchemy import update as sql_update
+    result = await db.execute(
+        sql_update(Tenant)
+        .where(Tenant.id == id)
+        .values(is_active=body["is_active"])
+        .returning(Tenant)
+    )
+    tenant = result.scalar_one_or_none()
+    if not tenant:
+        raise HTTPException(status_code=404, detail="Tenant not found")
+    await db.commit()
+    return {"id": str(tenant.id), "is_active": tenant.is_active}

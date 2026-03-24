@@ -21,9 +21,6 @@ build/
 .coverage
 htmlcov/
 
-# uv
-# Do NOT gitignore uv.lock — commit it
-
 # === Docker ===
 *.log
 docker-compose.override.yml

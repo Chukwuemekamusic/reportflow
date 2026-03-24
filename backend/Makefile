@@ -193,8 +193,8 @@ curl-download-report:
 		exit 1; \
 	fi
 	@echo "Download URL:"
-	@curl -s -I -H "Authorization: Bearer $$TOKEN" \
-		http://localhost:8000/api/v1/reports/$(JOB_ID)/download | grep -i "^location:" | cut -d' ' -f2-
+	@curl -s -w "%{redirect_url}\n" -o /dev/null -H "Authorization: Bearer $$TOKEN" \
+		http://localhost:8000/api/v1/reports/$(JOB_ID)/download
 
 curl-download-file:
 	@if [ -z "$(JOB_ID)" ]; then \

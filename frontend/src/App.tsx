@@ -27,6 +27,10 @@ function App() {
         <AuthProvider>
           <BrowserRouter>
             <Routes>
+              {/* portal routes  */}
+              {/* <Route path="/portal/register" element={<Register />} /> */}
+
+              {/* admin routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/test" element={<StyleTest />} />
               <Route
