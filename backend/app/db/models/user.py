@@ -1,4 +1,4 @@
-from sqlalchemy import String, Boolean, ForeignKey
+from sqlalchemy import String, Boolean, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
@@ -27,5 +27,5 @@ class User(UUIDMixin, TimestampMixin, Base):
 
     # Compound unique: email must be unique within a tenant, not globally
     __table_args__ = (
-        {"schema": None},  # placeholder — add UniqueConstraint here
+        UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
     )

@@ -37,15 +37,18 @@ async def register_user(db: AsyncSession, payload: RegisterRequest) -> User:
     if existing_user is not None:
         raise EmailAlreadyExistsError()
 
+    # Create a new tenant for this registration (B2B SaaS model)
     tenant = Tenant(name=payload.tenant_name, slug=create_slug(payload.tenant_name))
     db.add(tenant)
     await db.flush()
 
+    # First user in a new tenant is always an admin (tenant onboarding)
+    # To add additional users to an existing tenant, use POST /api/v1/users (admin-only)
     user = User(
         tenant_id=tenant.id,
         email=payload.email,
         hashed_password=hash_password(payload.password),
-        role="admin",
+        role="admin",  # Intentionally admin for first user
     )
     db.add(user)
     await db.flush()
