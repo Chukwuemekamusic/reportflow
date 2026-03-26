@@ -17,6 +17,10 @@ class User(UUIDMixin, TimestampMixin, Base):
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    # Role: "member" | "admin" | "system_admin"
+    # - member: Regular user within a tenant
+    # - admin: Tenant administrator (can manage users, view tenant data)
+    # - system_admin: Platform operator (can view all tenants, access /admin/* endpoints)
     role: Mapped[str] = mapped_column(String(50), default="member", nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 

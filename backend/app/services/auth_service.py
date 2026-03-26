@@ -42,13 +42,17 @@ async def register_user(db: AsyncSession, payload: RegisterRequest) -> User:
     db.add(tenant)
     await db.flush()
 
-    # First user in a new tenant is always an admin (tenant onboarding)
-    # To add additional users to an existing tenant, use POST /api/v1/users (admin-only)
+    # Role assignment logic:
+    # - First user in a new tenant gets role='admin' (tenant administrator)
+    # - Tenant admins can manage users in their own tenant via POST /api/v1/users
+    # - Tenant admins can access tenant-scoped endpoints: /api/v1/tenant/*
+    # - For system_admin role (platform operators), use scripts/create_system_admin.py
+    # - System admins can access cross-tenant endpoints: /api/v1/admin/*
     user = User(
         tenant_id=tenant.id,
         email=payload.email,
         hashed_password=hash_password(payload.password),
-        role="admin",  # Intentionally admin for first user
+        role="admin",  # Tenant administrator role
     )
     db.add(user)
     await db.flush()

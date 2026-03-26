@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Debug DLQ query"""
 import asyncio
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from sqlalchemy import select
 from app.db.base import AsyncSessionLocal
 from app.db.models.dead_letter import DeadLetterQueue

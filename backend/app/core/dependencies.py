@@ -47,10 +47,13 @@ async def get_current_admin(
     current_user: User = Depends(get_current_user)
 ) -> User:
     """
-    FastAPI dependency — yields the current user if they are an admin.
+    FastAPI dependency — yields the current user if they are an admin or system_admin.
     Raises 403 if the user is not an admin.
+
+    Use this for tenant-scoped admin operations (user management, tenant settings).
+    For system-wide operations, use require_system_admin() instead.
     """
-    if current_user.role != "admin":
+    if current_user.role not in ("admin", "system_admin"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_user
 
@@ -58,9 +61,30 @@ async def require_admin(
     current_user: User = Depends(get_current_admin)
 ) -> bool:
     """
-    FastAPI dependency — yields True if the current user is an admin.
+    FastAPI dependency — yields True if the current user is an admin or system_admin.
     Raises 403 if the user is not an admin.
+
+    Use this for tenant-scoped admin operations.
     """
     return True
 
-__all__ = ["get_db", "get_current_user", "get_current_admin", "require_admin"]
+async def require_system_admin(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """
+    FastAPI dependency — yields the current user ONLY if they are a system_admin.
+    Raises 403 if the user is not a system admin.
+
+    Use this for platform-wide operations that should only be accessible to
+    platform operators (viewing all tenants, system-wide metrics, etc.).
+
+    Regular tenant admins (role='admin') will receive 403 Forbidden.
+    """
+    if current_user.role != "system_admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="System administrator access required"
+        )
+    return current_user
+
+__all__ = ["get_db", "get_current_user", "get_current_admin", "require_admin", "require_system_admin"]

@@ -5,6 +5,10 @@ Usage: docker compose exec api uv run python scripts/check_user_role.py <email>
 """
 import asyncio
 import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from sqlalchemy import select
 from app.db.base import AsyncSessionLocal
 from app.db.models.user import User

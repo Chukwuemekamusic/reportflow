@@ -7,7 +7,7 @@ from app.db.models.dead_letter import DeadLetterQueue
 from app.db.models.tenant import Tenant
 from app.db.models.user import User
 
-from app.core.dependencies import get_db, require_admin
+from app.core.dependencies import get_db, require_system_admin
 from app.core.config import get_settings
 from datetime import datetime, timezone
 import uuid
@@ -18,7 +18,10 @@ import uuid
 
 settings = get_settings()
 
-router = APIRouter(prefix="/admin", tags=["Admin"], dependencies=[Depends(require_admin)])
+# IMPORTANT: This router requires system_admin role (platform operators only).
+# Regular tenant admins (role='admin') will receive 403 Forbidden.
+# For tenant-scoped admin operations, use /api/v1/tenant/* endpoints instead.
+router = APIRouter(prefix="/admin", tags=["System Admin"], dependencies=[Depends(require_system_admin)])
 
 @router.get("/jobs", summary="List all report jobs with pagination and filtering")
 async def list_jobs(
@@ -26,7 +29,7 @@ async def list_jobs(
     limit: int = 25,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     """
     List all report jobs across all tenants (admin only).
@@ -82,7 +85,7 @@ async def list_dlq(
     limit: int = 50,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     """
     List dead letter queue entries.
@@ -133,7 +136,7 @@ async def list_dlq(
 async def retry_dlq(
     id: str,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     """
     Re-enqueue the original report job from a DLQ entry.
@@ -211,7 +214,7 @@ async def retry_dlq(
 async def purge_dlq_entry(
     dlq_id: str,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     """
     Mark a DLQ entry as resolved without re-running the job.
@@ -237,7 +240,7 @@ async def purge_dlq_entry(
     
 # ── Live queue depth ───────────────────────────────────────────────────
 @router.get("/queue", summary="Live queue depth and worker status")
-async def get_queue_status(_admin=Depends(require_admin)):
+async def get_queue_status(_admin=Depends(require_system_admin)):
     """
     Query Redis directly for queue lengths.
     Celery uses a list per queue — LLEN gives the pending task count.
@@ -259,7 +262,7 @@ async def get_queue_status(_admin=Depends(require_admin)):
 @router.get("/tenants", summary="List all tenants with usage stats")
 async def list_tenants(
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     result = await db.execute(
         select(
@@ -296,7 +299,7 @@ async def update_tenant(
     id: str,
     body: dict,   # expects {"is_active": bool}
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_admin),
+    _admin=Depends(require_system_admin),
 ):
     from sqlalchemy import update as sql_update
     result = await db.execute(

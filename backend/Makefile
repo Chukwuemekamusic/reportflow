@@ -155,6 +155,11 @@ curl-create-token:
 		-H "Content-Type: application/json" \
 		-d '{"email":"admin@example.com","password":"your-password"}' | jq .
 
+curl-auth-token:
+	@curl -s -X POST http://localhost:8000/api/v1/auth/token \
+		-H "Content-Type: application/json" \
+    	-d '{"email": "sysadmin@platform.com", "password": "your-password"}' | jq .
+
 curl-new-token:
 	@$(MAKE) curl-create-token | jq -r ".access_token"
 	
