@@ -115,7 +115,7 @@ export function PortalDashboard() {
     }
   }, []);
 
-  const { connect, status: wsStatus } = useWebSocket({ onEvent: handleEvent });
+  const { connect } = useWebSocket({ onEvent: handleEvent });
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

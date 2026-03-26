@@ -1,4 +1,3 @@
-import { set } from "date-fns";
 import { useEffect, useRef, useState, useCallback } from "react";
 
 export type WSEvent =
@@ -64,7 +63,7 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
           ws.close(1000, "Job failed");
           setStatus("error");
         }
-      } catch (error) {
+      } catch {
         // ignore unparseable frames
       }
     };

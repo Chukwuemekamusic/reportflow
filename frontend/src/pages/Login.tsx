@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -34,7 +34,16 @@ export function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md shadow-lg">
         <CardHeader>
-          <CardTitle className="text-2xl font-bold">ReportFlow Admin</CardTitle>
+          <CardTitle className="text-2xl font-bold">System Administrator Login</CardTitle>
+          <CardDescription>
+            This login is for platform administrators only.
+            <br />
+            Tenant users should use the{" "}
+            <Link to="/portal/login" className="text-primary underline hover:no-underline">
+              Portal login
+            </Link>
+            .
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

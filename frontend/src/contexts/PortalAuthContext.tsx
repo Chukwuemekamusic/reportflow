@@ -1,9 +1,18 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
 import { apiClient } from "@/api/client";
+import { getUserFromToken, decodeJWT } from "@/utils/jwt";
+
+export interface PortalUser {
+  id: string;
+  tenantId: string;
+  role: "member" | "admin";
+}
 
 interface PortalAuthContextType {
   isAuthenticated: boolean;
   token: string | null;
+  user: PortalUser | null;
+  isAdmin: boolean; // Computed: user?.role === "admin"
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -22,30 +31,55 @@ export function PortalAuthProvider({
   children: React.ReactNode;
 }) {
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<PortalUser | null>(null);
 
   const login = useCallback(async (email: string, password: string) => {
     const res = await apiClient.post<{ access_token: string }>("/auth/token", {
       email,
       password,
     });
-    _portalToken = res.data.access_token;
-    setToken(_portalToken);
+    const accessToken = res.data.access_token;
+
+    // Decode JWT to get user info
+    const userInfo = getUserFromToken(accessToken);
+
+    if (!userInfo) {
+      throw new Error("Invalid token received from server");
+    }
+
+    // Portal accepts both "member" and "admin" roles (tenant-scoped)
+    // System admins should use the admin login instead
+    if (userInfo.role === "system_admin") {
+      throw new Error(
+        "System administrators should use the Admin login at /admin/login"
+      );
+    }
+
+    _portalToken = accessToken;
+    setToken(accessToken);
+    setUser(userInfo as PortalUser);
+
     // Set a timer to logout just before the token expires
-    const payload = JSON.parse(atob(_portalToken.split(".")[1])) as {
-      exp: number;
-    };
-    const expiresInMs = payload.exp * 1000 - Date.now() - 30_000; // 30s buffer
-    setTimeout(() => logout(), expiresInMs);
+    const payload = decodeJWT(accessToken);
+    if (payload?.exp) {
+      const expiresInMs = payload.exp * 1000 - Date.now() - 30_000; // 30s buffer
+      if (expiresInMs > 0) {
+        setTimeout(() => logout(), expiresInMs);
+      }
+    }
   }, []);
 
   const logout = useCallback(() => {
     _portalToken = null;
     setToken(null);
+    setUser(null);
   }, []);
+
+  const isAdmin = user?.role === "admin";
 
   return (
     <PortalAuthContext.Provider
-      value={{ isAuthenticated: !!token, token, login, logout }}
+      value={{ isAuthenticated: !!token, token, user, isAdmin, login, logout }}
     >
       {children}
     </PortalAuthContext.Provider>

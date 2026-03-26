@@ -1,67 +1,108 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { usePortalAuth } from "@/contexts/PortalAuthContext";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, History, LogOut, Zap } from "lucide-react";
+import {
+  LayoutDashboard,
+  History,
+  LogOut,
+  Users,
+  Briefcase,
+  AlertTriangle,
+  BarChart3,
+  User,
+} from "lucide-react";
 
-const NAV = [
+const BASE_NAV = [
   { to: "/portal/dashboard", label: "New Report", icon: LayoutDashboard },
   { to: "/portal/history", label: "My Reports", icon: History },
 ];
 
+const ADMIN_NAV = [
+  { to: "/portal/team", label: "Team", icon: Users },
+  { to: "/portal/jobs", label: "All Jobs", icon: Briefcase },
+  { to: "/portal/dlq", label: "DLQ", icon: AlertTriangle },
+  { to: "/portal/stats", label: "Stats", icon: BarChart3 },
+];
+
 export function PortalShell() {
   const { pathname } = useLocation();
-  const { logout } = usePortalAuth();
+  const { logout, isAdmin, user } = usePortalAuth();
+
+  const NAV = isAdmin ? [...BASE_NAV, ...ADMIN_NAV] : BASE_NAV;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top nav */}
-      <header className="bg-white border-b sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
-          {/* Brand */}
-          <Link
-            to="/portal/dashboard"
-            className="flex items-center gap-2 font-semibold text-slate-900"
-          >
-            <Zap className="h-5 w-5 text-blue-600" />
-            ReportFlow
-          </Link>
-
-          {/* Nav */}
-          <nav className="flex items-center gap-1">
-            {NAV.map(({ to, label, icon: Icon }) => (
-              <Link
-                key={to}
-                to={to}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm transition-colors",
-                  pathname === to
-                    ? "bg-slate-100 text-slate-900 font-medium"
-                    : "text-slate-500 hover:text-slate-900 hover:bg-slate-50",
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                {label}
-              </Link>
-            ))}
-          </nav>
-
-          {/* Sign out */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={logout}
-            className="text-slate-500 gap-1.5"
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
+    <div className="flex h-screen bg-background">
+      {/* Sidebar */}
+      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+        <div className="px-5 py-6 border-b border-sidebar-border">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-semibold text-sidebar-foreground">
+                ReportFlow
+              </span>
+              <span className="ml-2 text-xs text-sidebar-foreground/60">Portal</span>
+            </div>
+            {isAdmin && (
+              <Badge variant="outline" className="text-xs">
+                Admin
+              </Badge>
+            )}
+          </div>
         </div>
-      </header>
+        <nav className="flex-1 px-3 py-4 space-y-1">
+          {NAV.map(({ to, label, icon: Icon }) => (
+            <Link
+              key={to}
+              to={to}
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors",
+                pathname === to
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="border-t border-sidebar-border">
+          {user && (
+            <div className="px-4 pt-4 pb-2">
+              <div className="flex items-start gap-2 text-xs">
+                <User className="h-4 w-4 text-sidebar-foreground/60 mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sidebar-foreground/90 font-medium truncate">
+                    {user.id}
+                  </div>
+                  <div className="text-sidebar-foreground/60">
+                    Tenant: {user.tenantId}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
+        </div>
+      </aside>
 
-      {/* Page content */}
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 py-8">
-        <Outlet />
+      {/* Main content */}
+      <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8 xl:p-10">
+        <div className="mx-auto w-full max-w-7xl">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

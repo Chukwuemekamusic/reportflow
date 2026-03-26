@@ -1,6 +1,7 @@
 import { Link, useLocation, Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard,
   Briefcase,
@@ -8,6 +9,7 @@ import {
   CalendarClock,
   Building2,
   LogOut,
+  User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,17 +23,24 @@ const NAV = [
 
 export function Shell() {
   const { pathname } = useLocation();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
 
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
       <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
         <div className="px-5 py-6 border-b border-sidebar-border">
-          <span className="font-semibold text-sidebar-foreground">
-            ReportFlow
-          </span>
-          <span className="ml-2 text-xs text-sidebar-foreground/60">Admin</span>
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-semibold text-sidebar-foreground">
+                ReportFlow
+              </span>
+              <span className="ml-2 text-xs text-sidebar-foreground/60">Admin</span>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              System
+            </Badge>
+          </div>
         </div>
         <nav className="flex-1 px-3 py-4 space-y-1">
           {NAV.map(({ to, label, icon: Icon }) => (
@@ -50,16 +59,33 @@ export function Shell() {
             </Link>
           ))}
         </nav>
-        <div className="p-4 border-t border-sidebar-border">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-2"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </Button>
+        <div className="border-t border-sidebar-border">
+          {user && (
+            <div className="px-4 pt-4 pb-2">
+              <div className="flex items-start gap-2 text-xs">
+                <User className="h-4 w-4 text-sidebar-foreground/60 mt-0.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sidebar-foreground/90 font-medium truncate">
+                    {user.id}
+                  </div>
+                  <div className="text-sidebar-foreground/60">
+                    Tenant: {user.tenantId}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <div className="p-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start gap-2"
+              onClick={logout}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </Button>
+          </div>
         </div>
       </aside>
 
