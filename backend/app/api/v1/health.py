@@ -6,9 +6,8 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 import redis.asyncio as aioredis
-import boto3
-from botocore.exceptions import ClientError, EndpointResolutionError
 from datetime import datetime
+import aioboto3
 
 from app.core.dependencies import get_db
 from app.core.config import get_settings
@@ -65,7 +64,6 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
     
     # Minio / S3
     try:
-        import aioboto3
         session = aioboto3.Session()
         async with session.client(
             "s3",

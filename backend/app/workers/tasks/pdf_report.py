@@ -185,7 +185,6 @@ def _render_charts(sections: dict) -> dict:
 
 def _fig_to_svg(fig) -> str:
     """Convert a matplotlib figure to an SVG string."""
-    import matplotlib
     svg_buffer = io.StringIO()
     fig.savefig(svg_buffer, format="svg", bbox_inches="tight")
     svg_string = svg_buffer.getvalue()

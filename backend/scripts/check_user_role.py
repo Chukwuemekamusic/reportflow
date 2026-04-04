@@ -23,7 +23,7 @@ async def check_user_role(email: str):
             print(f"❌ User '{email}' not found")
             return
 
-        print(f"✅ User found:")
+        print("✅ User found:")
         print(f"   Email:     {user.email}")
         print(f"   Role:      {user.role}")
         print(f"   Tenant ID: {user.tenant_id}")

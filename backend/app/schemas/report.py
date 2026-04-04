@@ -1,5 +1,5 @@
 from __future__ import annotations
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 from typing import Literal, Any, TYPE_CHECKING
 from datetime import datetime
 import uuid

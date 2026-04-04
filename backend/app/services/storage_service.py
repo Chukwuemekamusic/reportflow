@@ -1,4 +1,3 @@
-import io
 from datetime import datetime, timezone
 import aioboto3
 from botocore.exceptions import ClientError

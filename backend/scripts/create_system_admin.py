@@ -101,7 +101,7 @@ async def create_system_admin():
             print("✅ System administrator created successfully!")
             print()
             print(f"   Email:     {email}")
-            print(f"   Role:      system_admin")
+            print("   Role:      system_admin")
             print(f"   Tenant:    System (id: {system_tenant.id})")
             print(f"   User ID:   {system_admin.id}")
             print()
@@ -112,7 +112,7 @@ async def create_system_admin():
             print("  - Manage DLQ entries across all tenants")
             print()
             print("To log in:")
-            print(f"  POST /api/v1/auth/token")
+            print("  POST /api/v1/auth/token")
             print(f"  Body: {{'email': '{email}', 'password': '***'}}")
             print()
 

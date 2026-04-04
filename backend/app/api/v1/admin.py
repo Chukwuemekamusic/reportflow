@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, func
+from sqlalchemy import select, func
 
 from app.db.models.report_job import ReportJob
 from app.db.models.dead_letter import DeadLetterQueue
@@ -10,7 +10,6 @@ from app.db.models.user import User
 from app.core.dependencies import get_db, require_system_admin
 from app.core.config import get_settings
 from datetime import datetime, timezone
-import uuid
 
 
 

@@ -8,7 +8,6 @@ This test uses the real database, Redis, and Celery workers running in Docker.
 """
 import asyncio
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient
 from datetime import datetime
 
@@ -39,7 +38,7 @@ async def test_full_report_generation_flow(client: AsyncClient):
     user_data = register_response.json()
     assert user_data["email"] == email
     assert user_data["role"] == "admin"
-    user_id = user_data["id"]
+    # user_id = user_data["id"]
 
     # ────────────────────────────────────────────────────────────
     # Step 2: Login and obtain JWT token

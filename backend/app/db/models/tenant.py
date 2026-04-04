@@ -2,6 +2,12 @@ from sqlalchemy import String, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.models.mixins import UUIDMixin, TimestampMixin
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.db.models.user import User
+    from app.db.models.schedule import Schedule
+    from app.db.models.report_job import ReportJob
+    from app.db.models.dead_letter import DeadLetterQueue
 
 class Tenant(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "tenants"

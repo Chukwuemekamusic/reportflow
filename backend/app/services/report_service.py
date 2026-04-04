@@ -1,4 +1,3 @@
-import uuid
 import logging
 import redis as _redis
 from fastapi import HTTPException, status
@@ -95,7 +94,7 @@ async def create_report_job(
     
     try:
         await db.flush() 
-    except IntegrityError as e:
+    except IntegrityError:
         # Race condition: another request inserted the same key between our
         # SELECT and our INSERT. Roll back and fetch the winner.
         await db.rollback()

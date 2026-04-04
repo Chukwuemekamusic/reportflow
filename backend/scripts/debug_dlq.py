@@ -16,7 +16,7 @@ async def debug_dlq():
         # Test the exact query from the endpoint
         result = await db.execute(
             select(DeadLetterQueue)
-            .where(DeadLetterQueue.resolved == False)
+            .where(DeadLetterQueue.resolved.is_(False))
             .order_by(DeadLetterQueue.created_at.desc())
             .limit(50)
             .offset(0)

@@ -57,7 +57,7 @@ async def test_create_user_in_tenant_creates_user_with_correct_role() -> None:
     )
 
     with patch("app.services.user_service.hash_password", return_value="hashed-password"):
-        user = await create_user_in_tenant(db, admin_user, payload)
+        await create_user_in_tenant(db, admin_user, payload)
 
     # Verify user was added to database
     assert db.add.call_count == 1
@@ -89,7 +89,7 @@ async def test_create_user_in_tenant_can_create_admin() -> None:
     )
 
     with patch("app.services.user_service.hash_password", return_value="hashed-password"):
-        user = await create_user_in_tenant(db, admin_user, payload)
+        await create_user_in_tenant(db, admin_user, payload)
 
     created_user = db.add.call_args.args[0]
     assert created_user.role == "admin"

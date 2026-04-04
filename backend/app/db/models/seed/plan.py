@@ -5,6 +5,10 @@ from app.db.base import Base
 from app.db.models.mixins import UUIDMixin, TimestampMixin
 
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.db.models.seed.subscription import Subscription
+
 class Plan(UUIDMixin, TimestampMixin, Base):
     """Subscription plan/tier model for demo seed data"""
     __tablename__ = "plans"

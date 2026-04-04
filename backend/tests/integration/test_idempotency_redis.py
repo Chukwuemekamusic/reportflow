@@ -6,7 +6,6 @@ Run this test INSIDE the Docker container:
 
 This test uses the real Redis instance running in Docker.
 """
-import asyncio
 import redis
 import pytest
 import pytest_asyncio

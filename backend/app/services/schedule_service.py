@@ -1,11 +1,13 @@
 import uuid
 import logging
 from datetime import datetime, timezone
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.models.schedule import Schedule
 from app.schemas.schedule import ScheduleCreate, ScheduleUpdate
 from croniter import croniter
+
+logger = logging.getLogger(__name__)
 
 
 # ── Helpers ──────────────────────────────────────────────────────────
@@ -49,6 +51,7 @@ async def list_schedules(
     include_inactive: bool = False,
 ) -> list[Schedule]:
     """Return schedules for the authenticated user, newest first."""
+    logger.info(f"Listing schedules for tenant {tenant_id} and user {user_id}")
     stmt = (
         select(Schedule)
         .where(Schedule.tenant_id == tenant_id, Schedule.user_id == user_id)
@@ -67,12 +70,14 @@ async def get_schedule(
     user_id: uuid.UUID,
 ) -> Schedule | None:
     """Return a schedule for the authenticated user, or None if not found."""
+    logger.info(f"Getting schedule {schedule_id} for tenant {tenant_id} and user {user_id}")
     stmt = select(Schedule).where(
         Schedule.id == schedule_id,
         Schedule.tenant_id == tenant_id,
         Schedule.user_id == user_id,
     )
     result = await db.execute(stmt)
+    logger.info(f"Schedule found: {result.scalar_one_or_none()}")
     return result.scalar_one_or_none()
 
 
@@ -121,6 +126,7 @@ async def deactivate_schedule(
     schedule.is_active = False
     await db.commit()
     await db.refresh(schedule)
+    logger.info(f"Deactivated schedule {schedule.id}")
     return schedule
 
 
@@ -149,4 +155,5 @@ async def mark_schedule_ran(db: AsyncSession, schedule: Schedule) -> None:
     now = datetime.now(timezone.utc)
     schedule.last_run_at = now
     schedule.next_run_at = _compute_next_run(schedule.cron_expr, after=now)
+    logger.info(f"Marked schedule {schedule.id} as run at {now}")
     await db.commit()

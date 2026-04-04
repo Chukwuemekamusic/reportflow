@@ -5,6 +5,11 @@ import uuid
 from app.db.base import Base
 from app.db.models.mixins import UUIDMixin, TimestampMixin
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from app.db.models.tenant import Tenant
+    from app.db.models.schedule import Schedule
+    from app.db.models.report_job import ReportJob
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"

@@ -294,7 +294,7 @@ async def get_tenant_stats(
     # Count unresolved DLQ entries
     dlq_query = select(func.count()).select_from(DeadLetterQueue).where(
         DeadLetterQueue.tenant_id == current_user.tenant_id,
-        DeadLetterQueue.resolved == False
+        DeadLetterQueue.resolved.is_(False)
     )
     dlq_result = await db.execute(dlq_query)
     unresolved_dlq_count = dlq_result.scalar()

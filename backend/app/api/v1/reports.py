@@ -7,16 +7,15 @@ from app.schemas.report import (
     ReportJobCreate, 
     ReportJobResponse, ReportJobListResponse, 
     job_to_response,
-    ReportJobFilters, )
+)
 from app.services import report_service
 
 # websocket
-import asyncio, json 
+import json 
 from fastapi import WebSocket, WebSocketDisconnect, status as ws_status
 import redis.asyncio as aioredis
 from app.core.security import decode_access_token
 from app.core.config import get_settings
-from app.core.rate_limit import check_and_increment_active_jobs
 
 settings = get_settings()
 
