@@ -15,6 +15,7 @@ on:
 env:
   PYTHON_VERSION: "3.13"
   WORKING_DIR: backend
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   lint:
