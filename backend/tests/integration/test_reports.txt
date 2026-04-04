@@ -1,0 +1,86 @@
+"""Integration tests for the reports API."""
+import pytest
+from httpx import AsyncClient
+
+
+@pytest.mark.asyncio
+async def test_submit_report_returns_job_id(client: AsyncClient, auth_headers: dict):
+    res = await client.post("/api/v1/reports", json={
+        "report_type": "sales_summary",
+        "priority": 5,
+        "idempotency_key": "test-job-001",
+    }, headers=auth_headers)
+    assert res.status_code == 201
+    data = res.json()
+    assert "job_id" in data
+    assert data["status"] == "queued"
+
+
+@pytest.mark.asyncio
+async def test_get_job_status(client: AsyncClient, auth_headers: dict):
+    submit = await client.post("/api/v1/reports", json={
+        "report_type": "csv_export",
+        "priority": 5,
+        "idempotency_key": "test-job-002",
+    }, headers=auth_headers)
+    job_id = submit.json()["job_id"]
+
+    res = await client.get(f"/api/v1/reports/{job_id}", headers=auth_headers)
+    assert res.status_code == 200
+    assert res.json()["job_id"] == job_id
+
+
+@pytest.mark.asyncio
+async def test_duplicate_idempotency_key_returns_existing_job(
+    client: AsyncClient, auth_headers: dict
+):
+    payload = {"report_type": "csv_export", "priority": 5, "idempotency_key": "dedup-key"}
+    res1 = await client.post("/api/v1/reports", json=payload, headers=auth_headers)
+    res2 = await client.post("/api/v1/reports", json=payload, headers=auth_headers)
+    assert res1.status_code == 201
+    assert res2.status_code == 200  # existing job returned
+    assert res1.json()["job_id"] == res2.json()["job_id"]
+
+
+@pytest.mark.asyncio
+async def test_cancel_queued_job(client: AsyncClient, auth_headers: dict):
+    submit = await client.post("/api/v1/reports", json={
+        "report_type": "sales_summary",
+        "priority": 5,
+        "idempotency_key": "cancel-test",
+    }, headers=auth_headers)
+    job_id = submit.json()["job_id"]
+
+    res = await client.delete(f"/api/v1/reports/{job_id}", headers=auth_headers)
+    assert res.status_code == 200
+    assert res.json()["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_cannot_access_another_tenants_job(client: AsyncClient):
+    # Tenant A
+    await client.post("/api/v1/auth/register", json={
+        "email": "a@corp.com", "password": "pass123", "tenant_name": "Corp A"
+    })
+    token_a = (await client.post("/api/v1/auth/token", json={
+        "email": "a@corp.com", "password": "pass123"
+    })).json()["access_token"]
+    headers_a = {"Authorization": f"Bearer {token_a}"}
+
+    # Tenant B
+    await client.post("/api/v1/auth/register", json={
+        "email": "b@corp.com", "password": "pass123", "tenant_name": "Corp B"
+    })
+    token_b = (await client.post("/api/v1/auth/token", json={
+        "email": "b@corp.com", "password": "pass123"
+    })).json()["access_token"]
+    headers_b = {"Authorization": f"Bearer {token_b}"}
+
+    # Tenant A submits a job
+    job_id = (await client.post("/api/v1/reports", json={
+        "report_type": "csv_export", "priority": 5, "idempotency_key": "cross-tenant"
+    }, headers=headers_a)).json()["job_id"]
+
+    # Tenant B tries to access it
+    res = await client.get(f"/api/v1/reports/{job_id}", headers=headers_b)
+    assert res.status_code == 404  # not 403 — don't reveal existence

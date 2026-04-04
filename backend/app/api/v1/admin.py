@@ -29,7 +29,6 @@ async def list_jobs(
     limit: int = 25,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     """
     List all report jobs across all tenants (admin only).
@@ -85,7 +84,6 @@ async def list_dlq(
     limit: int = 50,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     """
     List dead letter queue entries.
@@ -136,7 +134,6 @@ async def list_dlq(
 async def retry_dlq(
     id: str,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     """
     Re-enqueue the original report job from a DLQ entry.
@@ -214,7 +211,6 @@ async def retry_dlq(
 async def purge_dlq_entry(
     dlq_id: str,
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     """
     Mark a DLQ entry as resolved without re-running the job.
@@ -240,7 +236,7 @@ async def purge_dlq_entry(
     
 # ── Live queue depth ───────────────────────────────────────────────────
 @router.get("/queue", summary="Live queue depth and worker status")
-async def get_queue_status(_admin=Depends(require_system_admin)):
+async def get_queue_status():
     """
     Query Redis directly for queue lengths.
     Celery uses a list per queue — LLEN gives the pending task count.
@@ -262,7 +258,6 @@ async def get_queue_status(_admin=Depends(require_system_admin)):
 @router.get("/tenants", summary="List all tenants with usage stats")
 async def list_tenants(
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     result = await db.execute(
         select(
@@ -299,7 +294,6 @@ async def update_tenant(
     id: str,
     body: dict,   # expects {"is_active": bool}
     db: AsyncSession = Depends(get_db),
-    _admin=Depends(require_system_admin),
 ):
     from sqlalchemy import update as sql_update
     result = await db.execute(

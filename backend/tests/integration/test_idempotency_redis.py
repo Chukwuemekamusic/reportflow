@@ -10,20 +10,11 @@ import asyncio
 import redis
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import AsyncClient
 from datetime import datetime
-from app.main import app
 from app.core.config import get_settings
 
 settings = get_settings()
-
-
-@pytest_asyncio.fixture(scope="function")
-async def async_client():
-    """Create an async HTTP client for API testing."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
 
 
 @pytest_asyncio.fixture(scope="function")
@@ -35,7 +26,7 @@ def redis_client():
 
 
 @pytest.mark.asyncio
-async def test_idempotency_key_is_cached_in_redis(async_client: AsyncClient, redis_client: redis.Redis):
+async def test_idempotency_key_is_cached_in_redis(client: AsyncClient, redis_client: redis.Redis):
     """
     Test that creating a job with an idempotency key writes to Redis cache.
     Verifies the cache key format and TTL.
@@ -49,7 +40,7 @@ async def test_idempotency_key_is_cached_in_redis(async_client: AsyncClient, red
     # ────────────────────────────────────────────────────────────
     # Step 1: Register and login
     # ────────────────────────────────────────────────────────────
-    register_response = await async_client.post(
+    register_response = await client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -59,7 +50,7 @@ async def test_idempotency_key_is_cached_in_redis(async_client: AsyncClient, red
     )
     assert register_response.status_code == 201
 
-    token_response = await async_client.post(
+    token_response = await client.post(
         "/api/v1/auth/token",
         json={"email": email, "password": password},
     )
@@ -69,7 +60,7 @@ async def test_idempotency_key_is_cached_in_redis(async_client: AsyncClient, red
     # ────────────────────────────────────────────────────────────
     # Step 2: Submit a report with idempotency key
     # ────────────────────────────────────────────────────────────
-    submit_response = await async_client.post(
+    submit_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -104,7 +95,7 @@ async def test_idempotency_key_is_cached_in_redis(async_client: AsyncClient, red
 
 
 @pytest.mark.asyncio
-async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient, redis_client: redis.Redis):
+async def test_idempotency_cache_hit_returns_same_job(client: AsyncClient, redis_client: redis.Redis):
     """
     Test that submitting the same idempotency key twice returns the cached job
     on the second request (fast path via Redis, not DB).
@@ -118,7 +109,7 @@ async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient,
     # ────────────────────────────────────────────────────────────
     # Setup: Register and login
     # ────────────────────────────────────────────────────────────
-    await async_client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -126,7 +117,7 @@ async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient,
             "tenant_name": tenant_name,
         },
     )
-    token_response = await async_client.post(
+    token_response = await client.post(
         "/api/v1/auth/token",
         json={"email": email, "password": password},
     )
@@ -136,7 +127,7 @@ async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient,
     # ────────────────────────────────────────────────────────────
     # Step 1: Submit first report
     # ────────────────────────────────────────────────────────────
-    first_response = await async_client.post(
+    first_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -152,7 +143,7 @@ async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient,
     # ────────────────────────────────────────────────────────────
     # Step 2: Submit duplicate request with same idempotency key
     # ────────────────────────────────────────────────────────────
-    second_response = await async_client.post(
+    second_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -176,7 +167,7 @@ async def test_idempotency_cache_hit_returns_same_job(async_client: AsyncClient,
 
 
 @pytest.mark.asyncio
-async def test_cache_survives_across_multiple_requests(async_client: AsyncClient, redis_client: redis.Redis):
+async def test_cache_survives_across_multiple_requests(client: AsyncClient, redis_client: redis.Redis):
     """
     Test that the Redis cache persists across multiple rapid requests
     and consistently returns the same cached job.
@@ -187,7 +178,7 @@ async def test_cache_survives_across_multiple_requests(async_client: AsyncClient
     idempotency_key = f"multi-request-key-{timestamp}"
 
     # Setup
-    await async_client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -195,7 +186,7 @@ async def test_cache_survives_across_multiple_requests(async_client: AsyncClient
             "tenant_name": f"MultiTest-{timestamp}",
         },
     )
-    token_response = await async_client.post(
+    token_response = await client.post(
         "/api/v1/auth/token",
         json={"email": email, "password": password},
     )
@@ -203,7 +194,7 @@ async def test_cache_survives_across_multiple_requests(async_client: AsyncClient
     headers = {"Authorization": f"Bearer {token}"}
 
     # First request
-    first_response = await async_client.post(
+    first_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -218,7 +209,7 @@ async def test_cache_survives_across_multiple_requests(async_client: AsyncClient
     # Make 5 rapid duplicate requests
     job_ids = []
     for _ in range(5):
-        response = await async_client.post(
+        response = await client.post(
             "/api/v1/reports",
             json={
                 "report_type": "sales_summary",
@@ -236,7 +227,7 @@ async def test_cache_survives_across_multiple_requests(async_client: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_cache_isolation_between_tenants(async_client: AsyncClient, redis_client: redis.Redis):
+async def test_cache_isolation_between_tenants(client: AsyncClient, redis_client: redis.Redis):
     """
     Test that idempotency keys are isolated per tenant.
     Same key for different tenants should create separate jobs.
@@ -250,7 +241,7 @@ async def test_cache_isolation_between_tenants(async_client: AsyncClient, redis_
     password = "securepass123"
 
     # Register tenant 1
-    await async_client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": tenant1_email,
@@ -258,14 +249,14 @@ async def test_cache_isolation_between_tenants(async_client: AsyncClient, redis_
             "tenant_name": f"Tenant1-{timestamp}",
         },
     )
-    token1_response = await async_client.post(
+    token1_response = await client.post(
         "/api/v1/auth/token",
         json={"email": tenant1_email, "password": password},
     )
     token1 = token1_response.json()["access_token"]
 
     # Register tenant 2
-    await async_client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": tenant2_email,
@@ -273,14 +264,14 @@ async def test_cache_isolation_between_tenants(async_client: AsyncClient, redis_
             "tenant_name": f"Tenant2-{timestamp}",
         },
     )
-    token2_response = await async_client.post(
+    token2_response = await client.post(
         "/api/v1/auth/token",
         json={"email": tenant2_email, "password": password},
     )
     token2 = token2_response.json()["access_token"]
 
     # Submit same idempotency key for both tenants
-    job1_response = await async_client.post(
+    job1_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -292,7 +283,7 @@ async def test_cache_isolation_between_tenants(async_client: AsyncClient, redis_
     )
     job1_id = job1_response.json()["job_id"]
 
-    job2_response = await async_client.post(
+    job2_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",

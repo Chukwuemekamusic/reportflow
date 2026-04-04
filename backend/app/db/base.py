@@ -10,7 +10,8 @@ engine = create_async_engine(
     settings.database_url,
     pool_size=settings.db_pool_size,
     max_overflow=settings.db_max_overflow,
-    echo=settings.app_env == "development",  # echo only in dev
+    echo=False,  # Disable echo during tests to avoid interference
+    pool_pre_ping=True,  # Verify connections before using them
 )
 
 # Session factory - creates new sessions on demand

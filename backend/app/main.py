@@ -1,9 +1,15 @@
+import asyncio
+import logging
+from contextlib import asynccontextmanager, suppress
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
-import logging
 from app.core.config import get_settings
 from app.services.storage_service import ensure_bucket_exists
+
+from prometheus_fastapi_instrumentator import Instrumentator
+from prometheus_client import Gauge
+import redis.asyncio as aioredis
 
 # Configure logging
 logging.basicConfig(
@@ -12,8 +18,35 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 logger = logging.getLogger(__name__)
-
 settings = get_settings()
+
+# Custom metric - queue depth
+QUEUE_NAMES = ("high", "default", "low")
+QUEUE_METRICS_REFRESH_SECONDS = 5
+
+QUEUE_DEPTH = Gauge(
+    "reportflow_queue_depth",
+    "Number of pending jobs per queue",
+    ["queue"]
+)
+
+async def update_queue_metrics():
+    r = aioredis.from_url(settings.celery_broker_url)
+    try:
+        for queue in QUEUE_NAMES:
+            depth = await r.llen(queue)
+            QUEUE_DEPTH.labels(queue=queue).set(depth)
+    finally:
+        await r.aclose()
+
+
+async def refresh_queue_metrics() -> None:
+    while True:
+        try:
+            await update_queue_metrics()
+        except Exception:
+            logger.exception("Failed to refresh queue depth metrics")
+        await asyncio.sleep(QUEUE_METRICS_REFRESH_SECONDS)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,10 +58,18 @@ async def lifespan(app: FastAPI):
     # Phase 2: initialise Redis connection pool
     # Phase 2: create MinIO bucket if not exists
     await ensure_bucket_exists()
+    try:
+        await update_queue_metrics()
+    except Exception:
+        logger.exception("Failed to initialise queue depth metrics")
+    app.state.queue_metrics_task = asyncio.create_task(refresh_queue_metrics())
     logger.info("ReportFlow API startup complete")
     yield
     # Shutdown — clean up resources if needed
     logger.info("Shutting down ReportFlow API...")
+    app.state.queue_metrics_task.cancel()
+    with suppress(asyncio.CancelledError):
+        await app.state.queue_metrics_task
     
 
 def create_app() -> FastAPI:
@@ -64,6 +105,9 @@ def create_app() -> FastAPI:
     app.include_router(tenant_router, prefix="/api/v1", tags=["Tenant Admin"])
     app.include_router(admin_router, prefix="/api/v1", tags=["System Admin"])
     app.include_router(schedules_router, prefix="/api/v1", tags=["Schedules"])
+    
+    # Auto-instrument the app with Prometheus metrics - expose the /metrics endpoint
+    Instrumentator(excluded_handlers=["/metrics"]).instrument(app).expose(app)
 
     return app
 

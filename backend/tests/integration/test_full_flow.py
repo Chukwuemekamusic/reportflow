@@ -9,21 +9,12 @@ This test uses the real database, Redis, and Celery workers running in Docker.
 import asyncio
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import AsyncClient
 from datetime import datetime
-from app.main import app
-
-
-@pytest_asyncio.fixture(scope="function")
-async def async_client():
-    """Create an async HTTP client for API testing."""
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
 
 
 @pytest.mark.asyncio
-async def test_full_report_generation_flow(async_client: AsyncClient):
+async def test_full_report_generation_flow(client: AsyncClient):
     """
     Test the complete end-to-end flow from user registration to report download.
     Uses the real Docker database, Celery workers, and MinIO.
@@ -36,7 +27,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 1: Register a new user/tenant
     # ────────────────────────────────────────────────────────────
-    register_response = await async_client.post(
+    register_response = await client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -53,7 +44,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 2: Login and obtain JWT token
     # ────────────────────────────────────────────────────────────
-    token_response = await async_client.post(
+    token_response = await client.post(
         "/api/v1/auth/token",
         json={"email": email, "password": password},
     )
@@ -69,7 +60,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # Step 3: Submit a sales_summary report
     # ────────────────────────────────────────────────────────────
     idempotency_key = f"test-job-{timestamp}"
-    submit_response = await async_client.post(
+    submit_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -88,7 +79,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 4: Test idempotency - resubmit with same key
     # ────────────────────────────────────────────────────────────
-    resubmit_response = await async_client.post(
+    resubmit_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -108,7 +99,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     max_attempts = 30
     for attempt in range(max_attempts):
-        status_response = await async_client.get(
+        status_response = await client.get(
             f"/api/v1/reports/{job_id}",
             headers=headers,
         )
@@ -129,7 +120,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 6: Download the report (presigned URL redirect)
     # ────────────────────────────────────────────────────────────
-    download_response = await async_client.get(
+    download_response = await client.get(
         f"/api/v1/reports/{job_id}/download",
         headers=headers,
         follow_redirects=False,  # Check that we get a 302 redirect
@@ -143,7 +134,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 7: List jobs and verify the job appears
     # ────────────────────────────────────────────────────────────
-    list_response = await async_client.get(
+    list_response = await client.get(
         "/api/v1/reports",
         headers=headers,
     )
@@ -156,7 +147,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
     # ────────────────────────────────────────────────────────────
     # Step 8: Filter jobs by status
     # ────────────────────────────────────────────────────────────
-    filter_response = await async_client.get(
+    filter_response = await client.get(
         "/api/v1/reports?status=completed&report_type=sales_summary",
         headers=headers,
     )
@@ -168,7 +159,7 @@ async def test_full_report_generation_flow(async_client: AsyncClient):
 
 @pytest.mark.skip(reason="Event loop conflict - covered by manual testing")
 @pytest.mark.asyncio
-async def test_download_incomplete_job_fails(async_client: AsyncClient):
+async def test_download_incomplete_job_fails(client: AsyncClient):
     """
     Test that attempting to download a non-completed job returns 409.
     """
@@ -177,7 +168,7 @@ async def test_download_incomplete_job_fails(async_client: AsyncClient):
     password = "securepass123"
 
     # Register and login
-    await async_client.post(
+    await client.post(
         "/api/v1/auth/register",
         json={
             "email": email,
@@ -185,7 +176,7 @@ async def test_download_incomplete_job_fails(async_client: AsyncClient):
             "tenant_name": f"DownloadTest-{timestamp}",
         },
     )
-    token_response = await async_client.post(
+    token_response = await client.post(
         "/api/v1/auth/token",
         json={"email": email, "password": password},
     )
@@ -193,7 +184,7 @@ async def test_download_incomplete_job_fails(async_client: AsyncClient):
     headers = {"Authorization": f"Bearer {token}"}
 
     # Submit job
-    submit_response = await async_client.post(
+    submit_response = await client.post(
         "/api/v1/reports",
         json={
             "report_type": "sales_summary",
@@ -205,7 +196,7 @@ async def test_download_incomplete_job_fails(async_client: AsyncClient):
     job_id = submit_response.json()["job_id"]
 
     # Immediately try to download (job is likely still queued/running)
-    download_response = await async_client.get(
+    download_response = await client.get(
         f"/api/v1/reports/{job_id}/download",
         headers=headers,
         follow_redirects=False,
