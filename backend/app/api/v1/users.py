@@ -2,6 +2,7 @@
 User management API endpoints (admin-only).
 Allows tenant admins to invite/manage users within their tenant.
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db, get_current_admin
@@ -23,7 +24,7 @@ router = APIRouter()
     "",
     response_model=UserResponse,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new user in the current tenant (admin-only)"
+    summary="Create a new user in the current tenant (admin-only)",
 )
 async def create_user(
     payload: UserCreateRequest,
@@ -45,19 +46,18 @@ async def create_user(
         await db.commit()
         return user
     except EmailAlreadyExistsInTenantError as e:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.get(
     "",
     response_model=UserListResponse,
-    summary="List all users in the current tenant (admin-only)"
+    summary="List all users in the current tenant (admin-only)",
 )
 async def list_users(
-    limit: int = Query(50, ge=1, le=200, description="Maximum number of users to return"),
+    limit: int = Query(
+        50, ge=1, le=200, description="Maximum number of users to return"
+    ),
     offset: int = Query(0, ge=0, description="Number of users to skip"),
     current_user: User = Depends(get_current_admin),
     db: AsyncSession = Depends(get_db),
@@ -77,9 +77,7 @@ async def list_users(
 
 
 @router.delete(
-    "/{user_id}",
-    response_model=UserResponse,
-    summary="Deactivate a user (admin-only)"
+    "/{user_id}", response_model=UserResponse, summary="Deactivate a user (admin-only)"
 )
 async def deactivate_user(
     user_id: uuid.UUID,
@@ -97,12 +95,6 @@ async def deactivate_user(
         await db.commit()
         return user
     except UserNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except CannotDeactivateSelfError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

@@ -35,8 +35,14 @@ def run_pdf_report(self, job_id: str, tenant_id: str, filters: dict):
 
         # Reuse the same fetch function as sales_summary
         from app.workers.tasks.sales_summary import _fetch_subscription_data
+
         data = run_async(_fetch_subscription_data(filters))
-        self.update_progress(job_id, 25, f"Fetched {len(data['subscriptions'])} subscriptions", eta_secs=90)
+        self.update_progress(
+            job_id,
+            25,
+            f"Fetched {len(data['subscriptions'])} subscriptions",
+            eta_secs=90,
+        )
 
         # ── Stage 2: Build section data ──────────────────────────────
         self.update_progress(job_id, 30, "Computing section data...", eta_secs=75)
@@ -61,6 +67,7 @@ def run_pdf_report(self, job_id: str, tenant_id: str, filters: dict):
         # ── Stage 6: Upload ──────────────────────────────────────────
         self.update_progress(job_id, 95, "Uploading to storage...", eta_secs=2)
         from app.services.storage_service import upload_file_sync, build_object_key
+
         object_key = build_object_key(tenant_id, job_id, "pdf")
         upload_file_sync(pdf_bytes, object_key, content_type="application/pdf")
 
@@ -73,6 +80,7 @@ def run_pdf_report(self, job_id: str, tenant_id: str, filters: dict):
 
 
 # ── Section data ─────────────────────────────────────────────────────
+
 
 def _build_sections(data: dict) -> dict:
     """
@@ -102,10 +110,17 @@ def _build_sections(data: dict) -> dict:
     for s in active:
         name = s["customer_name"]
         if name not in customer_mrr:
-            customer_mrr[name] = {"name": name, "region": s["region"], "plan": s["plan_name"], "mrr": 0.0}
+            customer_mrr[name] = {
+                "name": name,
+                "region": s["region"],
+                "plan": s["plan_name"],
+                "mrr": 0.0,
+            }
         customer_mrr[name]["mrr"] += s["mrr"]
 
-    top_customers = sorted(customer_mrr.values(), key=lambda x: x["mrr"], reverse=True)[:20]
+    top_customers = sorted(customer_mrr.values(), key=lambda x: x["mrr"], reverse=True)[
+        :20
+    ]
     for c in top_customers:
         c["mrr"] = round(c["mrr"], 2)
 
@@ -125,7 +140,12 @@ def _build_sections(data: dict) -> dict:
             "total_count": len(subs),
         },
         "mrr_breakdown": {
-            "by_plan": {k: round(v, 2) for k, v in sorted(mrr_by_plan.items(), key=lambda x: x[1], reverse=True)},
+            "by_plan": {
+                k: round(v, 2)
+                for k, v in sorted(
+                    mrr_by_plan.items(), key=lambda x: x[1], reverse=True
+                )
+            },
             "by_region": {k: round(v, 2) for k, v in sorted(mrr_by_region.items())},
         },
         "customer_table": top_customers,
@@ -141,13 +161,15 @@ def _build_sections(data: dict) -> dict:
 
 # ── Chart rendering ──────────────────────────────────────────────────
 
+
 def _render_charts(sections: dict) -> dict:
     """
     Render matplotlib charts as SVG strings.
     Returns a dict of chart_name → svg_string.
     """
     import matplotlib
-    matplotlib.use("Agg")   # non-interactive backend — required in a worker process
+
+    matplotlib.use("Agg")  # non-interactive backend — required in a worker process
     import matplotlib.pyplot as plt
 
     charts = {}
@@ -174,7 +196,7 @@ def _render_charts(sections: dict) -> dict:
         fig, ax = plt.subplots(figsize=(6, 5))
         labels = list(by_region.keys())
         values = [by_region[r] for r in labels]
-        colors = ["#0f3460", "#16213e", "#533483", "#e94560", "#a8dadc"][:len(labels)]
+        colors = ["#0f3460", "#16213e", "#533483", "#e94560", "#a8dadc"][: len(labels)]
         ax.pie(values, labels=labels, colors=colors, autopct="%1.1f%%", startangle=140)
         ax.set_title("MRR by Region")
         charts["mrr_by_region"] = _fig_to_svg(fig)
@@ -191,11 +213,12 @@ def _fig_to_svg(fig) -> str:
     svg_buffer.close()
     # Strip the XML declaration so it embeds cleanly in HTML
     if svg_string.startswith("<?xml"):
-        svg_string = svg_string[svg_string.index("<svg"):]
+        svg_string = svg_string[svg_string.index("<svg") :]
     return svg_string
 
 
 # ── HTML rendering ───────────────────────────────────────────────────
+
 
 def _render_html(sections: dict, charts: dict, filters: dict) -> str:
     """Render the full report HTML using Jinja2."""
@@ -369,7 +392,9 @@ def _get_template() -> str:
 
 # ── PDF export ───────────────────────────────────────────────────────
 
+
 def _write_pdf(html_content: str) -> bytes:
     """Render HTML string to PDF bytes using WeasyPrint."""
     from weasyprint import HTML
+
     return HTML(string=html_content).write_pdf()

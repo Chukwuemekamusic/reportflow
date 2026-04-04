@@ -18,6 +18,7 @@ router = APIRouter(prefix="/schedules", tags=["schedules"])
 
 # ── Helpers ──────────────────────────────────────────────────────────
 
+
 def _to_response(schedule) -> ScheduleResponse:
     return ScheduleResponse(
         schedule_id=schedule.id,
@@ -42,11 +43,14 @@ async def _get_schedule_or_404(
         db, schedule_id, current_user.tenant_id, current_user.id
     )
     if not schedule:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Schedule not found"
+        )
     return schedule
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────
+
 
 @router.post("", response_model=ScheduleResponse, status_code=status.HTTP_201_CREATED)
 async def create_schedule(
@@ -108,7 +112,7 @@ async def deactivate_schedule(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Deactivate a schedule (soft delete). 
+    Deactivate a schedule (soft delete).
     Existing spawned jobs are preserved with their schedule_id intact.
     """
     schedule = await _get_schedule_or_404(schedule_id, current_user, db)

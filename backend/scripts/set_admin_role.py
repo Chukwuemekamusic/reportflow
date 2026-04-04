@@ -3,6 +3,7 @@
 Set a user's role to admin
 Usage: docker compose exec api uv run python scripts/set_admin_role.py <email>
 """
+
 import asyncio
 import sys
 from pathlib import Path

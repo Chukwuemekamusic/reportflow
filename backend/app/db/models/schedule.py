@@ -6,6 +6,7 @@ from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from app.db.models.tenant import Tenant
     from app.db.models.user import User
@@ -36,7 +37,9 @@ class Schedule(UUIDMixin, TimestampMixin, Base):
     filters: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     priority: Mapped[int] = mapped_column(SmallInteger, default=5, nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    last_run_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True), nullable=True)
+    last_run_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True), nullable=True
+    )
     next_run_at: Mapped[datetime | None] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=True,
@@ -44,4 +47,6 @@ class Schedule(UUIDMixin, TimestampMixin, Base):
 
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="schedules")
     user: Mapped["User"] = relationship("User", back_populates="schedules")
-    report_jobs: Mapped[list["ReportJob"]] = relationship("ReportJob", back_populates="schedule")
+    report_jobs: Mapped[list["ReportJob"]] = relationship(
+        "ReportJob", back_populates="schedule"
+    )

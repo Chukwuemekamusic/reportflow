@@ -29,9 +29,7 @@ async def test_create_user_raises_when_email_exists_in_tenant() -> None:
     db.execute.return_value = result
 
     payload = UserCreateRequest(
-        email="exists@example.com",
-        password="password123",
-        role="member"
+        email="exists@example.com", password="password123", role="member"
     )
 
     with pytest.raises(EmailAlreadyExistsInTenantError):
@@ -51,12 +49,12 @@ async def test_create_user_in_tenant_creates_user_with_correct_role() -> None:
     db.execute.return_value = result
 
     payload = UserCreateRequest(
-        email="newmember@example.com",
-        password="password123",
-        role="member"
+        email="newmember@example.com", password="password123", role="member"
     )
 
-    with patch("app.services.user_service.hash_password", return_value="hashed-password"):
+    with patch(
+        "app.services.user_service.hash_password", return_value="hashed-password"
+    ):
         await create_user_in_tenant(db, admin_user, payload)
 
     # Verify user was added to database
@@ -83,12 +81,12 @@ async def test_create_user_in_tenant_can_create_admin() -> None:
     db.execute.return_value = result
 
     payload = UserCreateRequest(
-        email="newadmin@example.com",
-        password="password123",
-        role="admin"
+        email="newadmin@example.com", password="password123", role="admin"
     )
 
-    with patch("app.services.user_service.hash_password", return_value="hashed-password"):
+    with patch(
+        "app.services.user_service.hash_password", return_value="hashed-password"
+    ):
         await create_user_in_tenant(db, admin_user, payload)
 
     created_user = db.add.call_args.args[0]

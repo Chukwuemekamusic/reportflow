@@ -8,6 +8,7 @@ filtering all queries by current_user.tenant_id.
 For system-wide operations across all tenants, see /api/v1/admin/* endpoints
 (requires system_admin role).
 """
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -44,17 +45,21 @@ async def list_tenant_jobs(
 
     Only jobs belonging to the current user's tenant are returned.
     """
-    query = select(ReportJob).where(
-        ReportJob.tenant_id == current_user.tenant_id
-    ).order_by(ReportJob.created_at.desc())
+    query = (
+        select(ReportJob)
+        .where(ReportJob.tenant_id == current_user.tenant_id)
+        .order_by(ReportJob.created_at.desc())
+    )
 
     # Apply status filter if provided
     if status:
         query = query.where(ReportJob.status == status)
 
     # Get total count
-    count_query = select(func.count()).select_from(ReportJob).where(
-        ReportJob.tenant_id == current_user.tenant_id
+    count_query = (
+        select(func.count())
+        .select_from(ReportJob)
+        .where(ReportJob.tenant_id == current_user.tenant_id)
     )
     if status:
         count_query = count_query.where(ReportJob.status == status)
@@ -106,9 +111,13 @@ async def list_tenant_dlq(
     Only DLQ entries belonging to the current user's tenant are returned.
     """
     # Get total count for this tenant
-    count_query = select(func.count()).select_from(DeadLetterQueue).where(
-        DeadLetterQueue.tenant_id == current_user.tenant_id,
-        DeadLetterQueue.resolved == resolved
+    count_query = (
+        select(func.count())
+        .select_from(DeadLetterQueue)
+        .where(
+            DeadLetterQueue.tenant_id == current_user.tenant_id,
+            DeadLetterQueue.resolved == resolved,
+        )
     )
     total_result = await db.execute(count_query)
     total = total_result.scalar()
@@ -118,7 +127,7 @@ async def list_tenant_dlq(
         select(DeadLetterQueue)
         .where(
             DeadLetterQueue.tenant_id == current_user.tenant_id,  # ✅ Tenant filter!
-            DeadLetterQueue.resolved == resolved
+            DeadLetterQueue.resolved == resolved,
         )
         .order_by(DeadLetterQueue.created_at.desc())
         .limit(limit)
@@ -133,7 +142,9 @@ async def list_tenant_dlq(
             "job_id": str(entry.job_id),
             "tenant_id": str(entry.tenant_id),
             "retry_count": entry.retry_count,
-            "last_error_at": entry.last_error_at.isoformat() if entry.last_error_at else None,
+            "last_error_at": entry.last_error_at.isoformat()
+            if entry.last_error_at
+            else None,
             "error_trace": entry.error_trace,
             "resolved": entry.resolved,
             "resolved_at": entry.resolved_at.isoformat() if entry.resolved_at else None,
@@ -167,33 +178,31 @@ async def retry_tenant_dlq(
     result = await db.execute(
         select(DeadLetterQueue).where(
             DeadLetterQueue.id == id,
-            DeadLetterQueue.tenant_id == current_user.tenant_id  # ✅ Tenant filter!
+            DeadLetterQueue.tenant_id == current_user.tenant_id,  # ✅ Tenant filter!
         )
     )
     dlq_entry = result.scalar_one_or_none()
     if not dlq_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="DLQ entry not found in your tenant"
+            detail="DLQ entry not found in your tenant",
         )
     if dlq_entry.resolved:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="DLQ entry already resolved"
+            status_code=status.HTTP_409_CONFLICT, detail="DLQ entry already resolved"
         )
 
     # ── 2. Load the original report job to clone its parameters ─────────
     result = await db.execute(
         select(ReportJob).where(
             ReportJob.id == dlq_entry.job_id,
-            ReportJob.tenant_id == current_user.tenant_id  # ✅ Tenant filter!
+            ReportJob.tenant_id == current_user.tenant_id,  # ✅ Tenant filter!
         )
     )
     original_job = result.scalar_one_or_none()
     if not original_job:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Original job not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Original job not found"
         )
 
     # ── 3. Create a new report job as a clone of the original ──────────
@@ -249,7 +258,7 @@ async def delete_tenant_dlq(
     result = await db.execute(
         select(DeadLetterQueue).where(
             DeadLetterQueue.id == id,
-            DeadLetterQueue.tenant_id == current_user.tenant_id  # ✅ Tenant filter!
+            DeadLetterQueue.tenant_id == current_user.tenant_id,  # ✅ Tenant filter!
         )
     )
     dlq_entry = result.scalar_one_or_none()
@@ -257,7 +266,7 @@ async def delete_tenant_dlq(
     if not dlq_entry:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="DLQ entry not found in your tenant"
+            detail="DLQ entry not found in your tenant",
         )
 
     await db.delete(dlq_entry)
@@ -278,12 +287,11 @@ async def get_tenant_stats(
     - DLQ entry count
     """
     # Count jobs by status
-    jobs_query = select(
-        ReportJob.status,
-        func.count(ReportJob.id).label("count")
-    ).where(
-        ReportJob.tenant_id == current_user.tenant_id
-    ).group_by(ReportJob.status)
+    jobs_query = (
+        select(ReportJob.status, func.count(ReportJob.id).label("count"))
+        .where(ReportJob.tenant_id == current_user.tenant_id)
+        .group_by(ReportJob.status)
+    )
 
     jobs_result = await db.execute(jobs_query)
     jobs_by_status = {row.status: row.count for row in jobs_result}
@@ -292,9 +300,13 @@ async def get_tenant_stats(
     total_jobs = sum(jobs_by_status.values())
 
     # Count unresolved DLQ entries
-    dlq_query = select(func.count()).select_from(DeadLetterQueue).where(
-        DeadLetterQueue.tenant_id == current_user.tenant_id,
-        DeadLetterQueue.resolved.is_(False)
+    dlq_query = (
+        select(func.count())
+        .select_from(DeadLetterQueue)
+        .where(
+            DeadLetterQueue.tenant_id == current_user.tenant_id,
+            DeadLetterQueue.resolved.is_(False),
+        )
     )
     dlq_result = await db.execute(dlq_query)
     unresolved_dlq_count = dlq_result.scalar()

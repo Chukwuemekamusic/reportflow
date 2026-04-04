@@ -6,6 +6,7 @@ Run this test INSIDE the Docker container:
 
 This test uses the real database, Redis, and Celery workers running in Docker.
 """
+
 import asyncio
 import pytest
 from httpx import AsyncClient

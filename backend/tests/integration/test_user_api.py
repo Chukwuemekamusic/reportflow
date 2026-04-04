@@ -6,6 +6,7 @@ Run this test INSIDE the Docker container:
 
 This test uses the real database running in Docker.
 """
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
@@ -114,12 +115,20 @@ async def test_list_users_as_admin(client: AsyncClient, admin_auth: dict):
     # Create two users with unique emails
     await client.post(
         "/api/v1/users",
-        json={"email": f"user1-{timestamp}@example.com", "password": "pass123", "role": "member"},
+        json={
+            "email": f"user1-{timestamp}@example.com",
+            "password": "pass123",
+            "role": "member",
+        },
         headers=headers,
     )
     await client.post(
         "/api/v1/users",
-        json={"email": f"user2-{timestamp}@example.com", "password": "pass123", "role": "member"},
+        json={
+            "email": f"user2-{timestamp}@example.com",
+            "password": "pass123",
+            "role": "member",
+        },
         headers=headers,
     )
 
@@ -141,9 +150,7 @@ async def test_list_users_with_pagination(client: AsyncClient, admin_auth: dict)
     headers = admin_auth["headers"]
 
     # List with limit and offset
-    list_response = await client.get(
-        "/api/v1/users?limit=2&offset=0", headers=headers
-    )
+    list_response = await client.get("/api/v1/users?limit=2&offset=0", headers=headers)
 
     assert list_response.status_code == 200
     data = list_response.json()
@@ -183,9 +190,7 @@ async def test_deactivate_user_as_admin(client: AsyncClient, admin_auth: dict):
 
 
 @pytest.mark.asyncio
-async def test_admin_cannot_deactivate_self(
-    client: AsyncClient, admin_auth: dict
-):
+async def test_admin_cannot_deactivate_self(client: AsyncClient, admin_auth: dict):
     """Test that an admin cannot deactivate their own account."""
     headers = admin_auth["headers"]
     admin_user_id = admin_auth["user_id"]
@@ -200,9 +205,7 @@ async def test_admin_cannot_deactivate_self(
 
 
 @pytest.mark.asyncio
-async def test_deactivate_nonexistent_user(
-    client: AsyncClient, admin_auth: dict
-):
+async def test_deactivate_nonexistent_user(client: AsyncClient, admin_auth: dict):
     """Test that deactivating a non-existent user returns 404."""
     headers = admin_auth["headers"]
     fake_user_id = "00000000-0000-0000-0000-000000000000"

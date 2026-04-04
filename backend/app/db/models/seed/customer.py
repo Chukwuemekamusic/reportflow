@@ -3,12 +3,14 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base
 from app.db.models.mixins import UUIDMixin, TimestampMixin
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from app.db.models.seed.subscription import Subscription
 
 
 class Customer(UUIDMixin, TimestampMixin, Base):
     """Customer/company model for demo seed data"""
+
     __tablename__ = "customers"
 
     company_name: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -18,4 +20,6 @@ class Customer(UUIDMixin, TimestampMixin, Base):
     industry: Mapped[str] = mapped_column(String(100), nullable=True)
 
     # Relationships
-    subscriptions: Mapped[list["Subscription"]] = relationship("Subscription", back_populates="customer")
+    subscriptions: Mapped[list["Subscription"]] = relationship(
+        "Subscription", back_populates="customer"
+    )

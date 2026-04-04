@@ -18,7 +18,9 @@ def _compute_next_run(cron_expr: str, after: datetime | None = None) -> datetime
     nxt = croniter(cron_expr, base).get_next(datetime)
     return nxt.replace(tzinfo=timezone.utc) if nxt.tzinfo is None else nxt
 
+
 # ── CRUD ─────────────────────────────────────────────────────────────
+
 
 async def create_schedule(
     db: AsyncSession,
@@ -70,7 +72,9 @@ async def get_schedule(
     user_id: uuid.UUID,
 ) -> Schedule | None:
     """Return a schedule for the authenticated user, or None if not found."""
-    logger.info(f"Getting schedule {schedule_id} for tenant {tenant_id} and user {user_id}")
+    logger.info(
+        f"Getting schedule {schedule_id} for tenant {tenant_id} and user {user_id}"
+    )
     stmt = select(Schedule).where(
         Schedule.id == schedule_id,
         Schedule.tenant_id == tenant_id,
@@ -94,15 +98,15 @@ async def update_schedule(
         # Recompute from now so the new expression fires correctly
         schedule.next_run_at = _compute_next_run(data.cron_expr)
         changed = True
-    
+
     if data.priority is not None and data.priority != schedule.priority:
         schedule.priority = data.priority
         changed = True
-    
+
     if data.filters is not None and data.filters != schedule.filters:
         schedule.filters = data.filters
         changed = True
-    
+
     if data.is_active is not None and data.is_active != schedule.is_active:
         schedule.is_active = data.is_active
         if data.is_active:
@@ -110,11 +114,11 @@ async def update_schedule(
             # for an old next_run_at that has already passed
             schedule.next_run_at = _compute_next_run(schedule.cron_expr)
         changed = True
-    
+
     if changed:
         await db.commit()
         await db.refresh(schedule)
-    
+
     return schedule
 
 
@@ -131,6 +135,7 @@ async def deactivate_schedule(
 
 
 # ── Beat task ───────────────────────────────────────────────────────────
+
 
 async def get_due_schedules(db: AsyncSession) -> list[Schedule]:
     """

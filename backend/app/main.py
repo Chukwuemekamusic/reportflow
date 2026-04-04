@@ -25,10 +25,9 @@ QUEUE_NAMES = ("high", "default", "low")
 QUEUE_METRICS_REFRESH_SECONDS = 5
 
 QUEUE_DEPTH = Gauge(
-    "reportflow_queue_depth",
-    "Number of pending jobs per queue",
-    ["queue"]
+    "reportflow_queue_depth", "Number of pending jobs per queue", ["queue"]
 )
+
 
 async def update_queue_metrics():
     r = aioredis.from_url(settings.celery_broker_url)
@@ -47,6 +46,7 @@ async def refresh_queue_metrics() -> None:
         except Exception:
             logger.exception("Failed to refresh queue depth metrics")
         await asyncio.sleep(QUEUE_METRICS_REFRESH_SECONDS)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -70,7 +70,7 @@ async def lifespan(app: FastAPI):
     app.state.queue_metrics_task.cancel()
     with suppress(asyncio.CancelledError):
         await app.state.queue_metrics_task
-    
+
 
 def create_app() -> FastAPI:
     app = FastAPI(
@@ -79,7 +79,7 @@ def create_app() -> FastAPI:
         version="0.1.0",
         lifespan=lifespan,
     )
-    
+
     # Configure CORS
     app.add_middleware(
         CORSMiddleware,
@@ -88,7 +88,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    
+
     # Routers
     from app.api.v1.health import router as health_router
     from app.api.v1.auth import router as auth_router
@@ -105,10 +105,11 @@ def create_app() -> FastAPI:
     app.include_router(tenant_router, prefix="/api/v1", tags=["Tenant Admin"])
     app.include_router(admin_router, prefix="/api/v1", tags=["System Admin"])
     app.include_router(schedules_router, prefix="/api/v1", tags=["Schedules"])
-    
+
     # Auto-instrument the app with Prometheus metrics - expose the /metrics endpoint
     Instrumentator(excluded_handlers=["/metrics"]).instrument(app).expose(app)
 
     return app
+
 
 app = create_app()

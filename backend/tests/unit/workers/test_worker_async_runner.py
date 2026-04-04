@@ -60,13 +60,24 @@ def test_update_progress_uses_shared_async_runner() -> None:
         assert asyncio.iscoroutine(coro)
         coro.close()
 
-    with patch("app.workers.tasks.base.run_async", side_effect=fake_run_async) as mock_run_async, patch.object(task, "_publish_event") as mock_publish:
+    with (
+        patch(
+            "app.workers.tasks.base.run_async", side_effect=fake_run_async
+        ) as mock_run_async,
+        patch.object(task, "_publish_event") as mock_publish,
+    ):
         task.update_progress("job-123", 5, "Connecting to database...", eta_secs=90)
 
     assert mock_run_async.call_count == 1
     mock_publish.assert_called_once_with(
         "job-123",
-        {"event": "progress", "job_id": "job-123", "progress": 5, "stage": "Connecting to database...", "eta_secs": 90},
+        {
+            "event": "progress",
+            "job_id": "job-123",
+            "progress": 5,
+            "stage": "Connecting to database...",
+            "eta_secs": 90,
+        },
     )
 
 
@@ -75,6 +86,8 @@ def test_upload_file_sync_runs_upload_on_worker_loop() -> None:
         return f"{object_key}:{content_type}:{file_bytes.decode()}"
 
     with patch("app.services.storage_service.upload_file", new=fake_upload):
-        result = storage_service.upload_file_sync(b"pdf", "reports/job-1.pdf", "application/pdf")
+        result = storage_service.upload_file_sync(
+            b"pdf", "reports/job-1.pdf", "application/pdf"
+        )
 
     assert result == "reports/job-1.pdf:application/pdf:pdf"

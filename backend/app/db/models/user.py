@@ -6,10 +6,12 @@ from app.db.base import Base
 from app.db.models.mixins import UUIDMixin, TimestampMixin
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from app.db.models.tenant import Tenant
     from app.db.models.schedule import Schedule
     from app.db.models.report_job import ReportJob
+
 
 class User(UUIDMixin, TimestampMixin, Base):
     __tablename__ = "users"
@@ -18,7 +20,7 @@ class User(UUIDMixin, TimestampMixin, Base):
         UUID(as_uuid=True),
         ForeignKey("tenants.id", ondelete="CASCADE"),
         nullable=False,
-        index=True
+        index=True,
     )
     email: Mapped[str] = mapped_column(String(255), nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -31,10 +33,12 @@ class User(UUIDMixin, TimestampMixin, Base):
 
     # Relationships
     tenant: Mapped["Tenant"] = relationship("Tenant", back_populates="users")
-    schedules: Mapped[list["Schedule"]] = relationship("Schedule", back_populates="user")
-    report_jobs: Mapped[list["ReportJob"]] = relationship("ReportJob", back_populates="user")
+    schedules: Mapped[list["Schedule"]] = relationship(
+        "Schedule", back_populates="user"
+    )
+    report_jobs: Mapped[list["ReportJob"]] = relationship(
+        "ReportJob", back_populates="user"
+    )
 
     # Compound unique: email must be unique within a tenant, not globally
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "email", name="uq_tenant_email"),)

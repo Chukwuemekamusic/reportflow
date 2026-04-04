@@ -3,6 +3,7 @@
 Check user role in the database
 Usage: docker compose exec api uv run python scripts/check_user_role.py <email>
 """
+
 import asyncio
 import sys
 from pathlib import Path

@@ -15,11 +15,11 @@ from app.db.models.user import User
 
 router = APIRouter()
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    payload: RegisterRequest, 
-    db: AsyncSession = Depends(get_db)
-):
+
+@router.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register(payload: RegisterRequest, db: AsyncSession = Depends(get_db)):
     try:
         return await register_user(db, payload)
     except EmailAlreadyExistsError as exc:
@@ -28,10 +28,10 @@ async def register(
             detail=str(exc),
         ) from exc
 
+
 @router.post("/token", response_model=TokenResponse, status_code=status.HTTP_200_OK)
 async def login_for_access_token(
-    payload: TokenRequest, 
-    db: AsyncSession = Depends(get_db)
+    payload: TokenRequest, db: AsyncSession = Depends(get_db)
 ):
     try:
         user = await authenticate_user(db, payload)
@@ -42,10 +42,8 @@ async def login_for_access_token(
         ) from exc
 
     return create_token_response(user)
-    
+
 
 @router.get("/me", response_model=UserResponse, status_code=status.HTTP_200_OK)
-async def get_current_user(
-    current_user: User = Depends(get_current_user)
-):
+async def get_current_user(current_user: User = Depends(get_current_user)):
     return current_user

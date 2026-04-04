@@ -1,6 +1,7 @@
 """
 Utility functions for the application.
 """
+
 import re
 from uuid import uuid4
 
@@ -34,9 +35,9 @@ def create_slug(name: str) -> str:
 
     slug = name.lower()
     # Replace all non-alphanumeric characters with hyphens
-    slug = re.sub(r'[^a-z0-9]+', '-', slug)
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
     # Remove leading/trailing hyphens
-    slug = slug.strip('-')
+    slug = slug.strip("-")
 
     # Handle edge case where only special characters were present
     if not slug:

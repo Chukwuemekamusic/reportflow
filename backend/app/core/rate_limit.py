@@ -45,22 +45,22 @@ def get_active_job_count(user_id: str) -> int:
         return int(val) if val else 0
     finally:
         r.close()
-        
+
 
 def decrement_active_jobs(user_id: str):
-        """
-        Decrement the active-job counter for a user on Redis DB 0 (redis_url).
-        Must target the same DB that rate_limit.py uses when incrementing —
-        that's DB 0, NOT the pubsub DB (DB 1).
-        Guards against the counter going negative (e.g. worker crash mid-job).
-        """
-        r = _redis.Redis.from_url(settings.redis_url, decode_responses=True)
-        try:
-            current = r.decr(f"ratelimit:{user_id}:active_jobs")
-            if current < 0:
-                logger.warning(f"Active jobs counter is negative: {current}")
-                r.set(f"ratelimit:{user_id}:active_jobs", 0)
-        except Exception as e:
-            logger.error(f"Failed to decrement active jobs counter: {e}")
-        finally:
-            r.close()
+    """
+    Decrement the active-job counter for a user on Redis DB 0 (redis_url).
+    Must target the same DB that rate_limit.py uses when incrementing —
+    that's DB 0, NOT the pubsub DB (DB 1).
+    Guards against the counter going negative (e.g. worker crash mid-job).
+    """
+    r = _redis.Redis.from_url(settings.redis_url, decode_responses=True)
+    try:
+        current = r.decr(f"ratelimit:{user_id}:active_jobs")
+        if current < 0:
+            logger.warning(f"Active jobs counter is negative: {current}")
+            r.set(f"ratelimit:{user_id}:active_jobs", 0)
+    except Exception as e:
+        logger.error(f"Failed to decrement active jobs counter: {e}")
+    finally:
+        r.close()

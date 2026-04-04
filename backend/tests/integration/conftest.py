@@ -7,6 +7,7 @@ Tests use timestamp-based isolation (no transactional rollback).
 Run with:
     docker compose exec api uv run pytest tests/integration/ -v
 """
+
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 

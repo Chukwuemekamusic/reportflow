@@ -10,9 +10,17 @@ settings = get_settings()
 
 # Default columns if none specified in filters
 DEFAULT_COLUMNS = [
-    "subscription_id", "customer_name", "region", "plan_name",
-    "status", "billing_cycle", "seats", "mrr", "started_at",
+    "subscription_id",
+    "customer_name",
+    "region",
+    "plan_name",
+    "status",
+    "billing_cycle",
+    "seats",
+    "mrr",
+    "started_at",
 ]
+
 
 @celery_app.task(
     bind=True,
@@ -33,56 +41,62 @@ def run_csv_export(self, job_id: str, tenant_id: str, filters: dict):
       95-100%: Complete
     """
     try:
-        columns=filters.get("columns", DEFAULT_COLUMNS)
+        columns = filters.get("columns", DEFAULT_COLUMNS)
         # ── 1. Count total rows ───────────────────────────────────────
         self.update_progress(job_id, 5, "Counting total rows...", eta_secs=60)
         total_rows = run_async(_count_rows(tenant_id, filters))
-        self.update_progress(job_id, 10, f"Exporting {total_rows:,} rows...", eta_secs=50)
-        
+        self.update_progress(
+            job_id, 10, f"Exporting {total_rows:,} rows...", eta_secs=50
+        )
+
         # ── 2. Fetch rows in chunks and write to CSV buffer ───────────
         csv_buffer = io.StringIO()
-        writer = csv.DictWriter(csv_buffer, fieldnames=columns, extrasaction='ignore')
+        writer = csv.DictWriter(csv_buffer, fieldnames=columns, extrasaction="ignore")
         writer.writeheader()
-        
+
         rows_written = 0
         offset = 0
         chunk_size = 1000
-        
+
         while True:
-            chunk = run_async(_fetch_chunk(filters, offset=offset, chunk_size=chunk_size))
-            
+            chunk = run_async(
+                _fetch_chunk(filters, offset=offset, chunk_size=chunk_size)
+            )
+
             if not chunk:
                 break
-            
+
             writer.writerows(chunk)
             rows_written += len(chunk)
             offset += chunk_size
-            
+
             # Progress: maps 100% → 80% of total job time
             pct = 10 + int((rows_written / total_rows) * 70) if total_rows else 80
             self.update_progress(
-                job_id, pct,
+                job_id,
+                pct,
                 f"Written {rows_written:,} / {total_rows:,} rows",
                 eta_secs=max(0, int((total_rows - rows_written) / 2000)),
             )
-        
+
         # ── 3. Upload to MinIO ───────────────────────────────────
         self.update_progress(job_id, 90, "Uploading to storage...", eta_secs=10)
-        
+
         csv_bytes = csv_buffer.getvalue().encode("utf-8")
         csv_buffer.close()
-        
+
         from app.services.storage_service import upload_file_sync, build_object_key
+
         object_key = build_object_key(tenant_id, job_id, "csv")
         upload_file_sync(csv_bytes, object_key, "text/csv")
-        
+
         self.update_progress(job_id, 99, "Upload complete", eta_secs=1)
-        
+
         return object_key
     except Exception as exc:
         logger.error(f"[{job_id}] CSV export failed: {exc}", exc_info=True)
         raise self.retry(exc=exc)
-    
+
 
 # ── Async helpers ─────────────────────────────────────────────────────
 async def _count_rows(tenant_id: str, filters: dict) -> int:
@@ -92,7 +106,7 @@ async def _count_rows(tenant_id: str, filters: dict) -> int:
     from app.db.models.seed.customer import Customer
     from app.db.models.seed.plan import Plan
     from sqlalchemy import select, func
-    
+
     async with AsyncSessionLocal() as session:
         query = select(func.count()).select_from(
             select(Subscription)
@@ -103,7 +117,8 @@ async def _count_rows(tenant_id: str, filters: dict) -> int:
         query = _apply_filters(query, filters, count_mode=True)
         result = await session.execute(query)
         return result.scalar_one() or 0
-    
+
+
 async def _fetch_chunk(filters: dict, offset: int, chunk_size: int) -> list[dict]:
     """Fetch a single chunk of subscription rows as plain dicts."""
     from app.db.base import AsyncSessionLocal
@@ -111,7 +126,7 @@ async def _fetch_chunk(filters: dict, offset: int, chunk_size: int) -> list[dict
     from app.db.models.seed.customer import Customer
     from app.db.models.seed.plan import Plan
     from sqlalchemy import select
-    
+
     async with AsyncSessionLocal() as session:
         query = (
             select(Subscription, Customer, Plan)
@@ -150,7 +165,8 @@ async def _fetch_chunk(filters: dict, offset: int, chunk_size: int) -> list[dict
         }
         for sub, customer, plan in rows
     ]
-    
+
+
 def _apply_filters(query, filters: dict, count_mode: bool = False):
     """Helper — applies WHERE clauses. Only used for count query."""
     # For the count query the join is already in the subquery — nothing extra needed here.

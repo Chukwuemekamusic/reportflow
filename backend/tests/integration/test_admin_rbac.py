@@ -6,6 +6,7 @@ Tests the security fix for cross-tenant data leakage in admin endpoints.
 Run this test INSIDE the Docker container:
     docker compose exec api bash -c "PYTHONPATH=/app uv run pytest tests/integration/test_admin_rbac.py -v"
 """
+
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
@@ -224,9 +225,7 @@ async def test_member_user_cannot_access_tenant_admin_endpoints(
 
 
 @pytest.mark.asyncio
-async def test_unauthenticated_cannot_access_any_admin_endpoints(
-    client: AsyncClient
-):
+async def test_unauthenticated_cannot_access_any_admin_endpoints(client: AsyncClient):
     """Test that unauthenticated requests get 401."""
     endpoints = [
         "/api/v1/admin/jobs",

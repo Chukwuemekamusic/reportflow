@@ -4,14 +4,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.dependencies import get_db, get_current_user
 from app.db.models.user import User
 from app.schemas.report import (
-    ReportJobCreate, 
-    ReportJobResponse, ReportJobListResponse, 
+    ReportJobCreate,
+    ReportJobResponse,
+    ReportJobListResponse,
     job_to_response,
 )
 from app.services import report_service
 
 # websocket
-import json 
+import json
 from fastapi import WebSocket, WebSocketDisconnect, status as ws_status
 import redis.asyncio as aioredis
 from app.core.security import decode_access_token
@@ -21,7 +22,13 @@ settings = get_settings()
 
 router = APIRouter()
 
-@router.post("", response_model=ReportJobResponse, status_code=status.HTTP_201_CREATED, summary="Submit a new report gemneration job")
+
+@router.post(
+    "",
+    response_model=ReportJobResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Submit a new report gemneration job",
+)
 async def submit_report(
     payload: ReportJobCreate,
     current_user: User = Depends(get_current_user),
@@ -29,10 +36,10 @@ async def submit_report(
 ):
     """
     Submit a new async report generation job.
-    
+
     Rate limiting is applied inside the service layer, before the DB insert,
     so there is nothing to roll back if the limit is exceeded.
-    
+
     Returns 201 if a new job was created, or 200 if an existing job was
     returned due to an idempotency key match.
     """
@@ -43,14 +50,20 @@ async def submit_report(
     response = job_to_response(job)
     if not created:
         from fastapi.responses import JSONResponse
+
         return JSONResponse(
             content=response.model_dump(mode="json"),
             status_code=status.HTTP_200_OK,
         )
-    
+
     return response
 
-@router.get("", response_model=ReportJobListResponse, summary="List report jobs for current user")
+
+@router.get(
+    "",
+    response_model=ReportJobListResponse,
+    summary="List report jobs for current user",
+)
 async def list_report_jobs(
     status: str | None = Query(None, description="Filter by job status"),
     report_type: str | None = Query(None, description="Filter by report type"),
@@ -63,14 +76,17 @@ async def list_report_jobs(
     List report jobs for the current user, with optional filtering and
     pagination.
     """
-    jobs = await report_service.list_jobs(current_user, db, status, report_type, limit, offset)
+    jobs = await report_service.list_jobs(
+        current_user, db, status, report_type, limit, offset
+    )
     return ReportJobListResponse(
         items=[job_to_response(job) for job in jobs],
         total=len(jobs),
         limit=limit,
         offset=offset,
     )
-    
+
+
 @router.get(
     "/{job_id}",
     response_model=ReportJobResponse,
@@ -86,8 +102,11 @@ async def get_report_job(
     """
     job = await report_service.get_job(job_id, current_user, db)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     return job_to_response(job)
+
 
 @router.delete(
     "/{job_id}",
@@ -100,7 +119,7 @@ async def cancel_report(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Cancel a queued or running report job. 
+    Cancel a queued or running report job.
     - Queued jobs: revoked from Celery queue before they start
     - Running jobs: SIGTERM sent to the worker executing the task
     - Completed/failed jobs: status updated to 'cancelled' (no-op on Celery side)
@@ -110,11 +129,15 @@ async def cancel_report(
     """
     job = await report_service.cancel_job(job_id, current_user, db)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
-    
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
+
     if job.status not in ("queued", "running", "cancelled"):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Job cannot be cancelled - current status: {job.status}")
-    
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Job cannot be cancelled - current status: {job.status}",
+        )
 
 
 @router.get(
@@ -132,19 +155,25 @@ async def download_report(
     if job.status != "completed":
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"Report is not ready (status: {job.status})"
+            detail=f"Report is not ready (status: {job.status})",
         )
-        
+
     if not job.result_file_key:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="File key missing — contact support")
-    
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="File key missing — contact support",
+        )
+
     # Determine extension from the object key
-    ext = job.result_file_key.rsplit(".", 1)[-1] if "." in job.result_file_key else "bin"
+    ext = (
+        job.result_file_key.rsplit(".", 1)[-1] if "." in job.result_file_key else "bin"
+    )
     filename = f"report-{job_id[:8]}.{ext}"
 
     from app.services.storage_service import generate_presigned_url
+
     url = await generate_presigned_url(job.result_file_key, filename_hint=filename)
-    
+
     # 302 REDIRECT - client will follow the redirect to the presigned URL
     return RedirectResponse(url, status_code=302)
 
@@ -154,7 +183,7 @@ async def download_report(
 async def stream_report_progress(
     websocket: WebSocket,
     job_id: str,
-    token: str | None = Query(None), # passed as ?token=xyz...
+    token: str | None = Query(None),  # passed as ?token=xyz...
 ):
     """
     WebSocket endpoint — streams real-time progress events for a report job.
@@ -171,14 +200,18 @@ async def stream_report_progress(
 
     # 1. Validate JWT from query param
     if not token:
-        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Missing token")
+        await websocket.close(
+            code=ws_status.WS_1008_POLICY_VIOLATION, reason="Missing token"
+        )
         return
-    
+
     payload = decode_access_token(token)
     if not payload:
-        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Invalid token")
+        await websocket.close(
+            code=ws_status.WS_1008_POLICY_VIOLATION, reason="Invalid token"
+        )
         return
-    
+
     tenant_id = payload.get("tenant_id")
 
     # 2. Verify the job exists and belongs to the tenant
@@ -196,51 +229,63 @@ async def stream_report_progress(
         job = result.scalar_one_or_none()
 
     if not job:
-        await websocket.close(code=ws_status.WS_1008_POLICY_VIOLATION, reason="Job not found")
+        await websocket.close(
+            code=ws_status.WS_1008_POLICY_VIOLATION, reason="Job not found"
+        )
         return
-    
+
     # 3. If job already finished, send final event and close
-    
+
     if job.status == "completed":
-        await websocket.send_text(json.dumps({
-            "event": "completed",
-            "job_id": job_id,
-            "progress": 100,
-            "download_url": f"/api/v1/reports/{job_id}/download",
-        }))
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "event": "completed",
+                    "job_id": job_id,
+                    "progress": 100,
+                    "download_url": f"/api/v1/reports/{job_id}/download",
+                }
+            )
+        )
         await websocket.close()
         return
-    
+
     if job.status == "failed":
-        await websocket.send_text(json.dumps({
-            "event": "failed",
-            "job_id": job_id,
-            "error_message": job.error_message or "Unknown error",
-        }))
+        await websocket.send_text(
+            json.dumps(
+                {
+                    "event": "failed",
+                    "job_id": job_id,
+                    "error_message": job.error_message or "Unknown error",
+                }
+            )
+        )
         await websocket.close()
         return
 
     # 4. Subscribe to Redis pub/sub channel and stream events
-    redis_client = aioredis.Redis.from_url(settings.redis_pubsub_url, decode_responses=True)
-    
+    redis_client = aioredis.Redis.from_url(
+        settings.redis_pubsub_url, decode_responses=True
+    )
+
     try:
         async with redis_client.pubsub() as pubsub:
             await pubsub.subscribe(f"job:{job_id}")
-            
+
             async for message in pubsub.listen():
                 # pubsub.listen() yields control messages (subscribe, unsubscribe, etc.) - skip them
                 if message["type"] != "message":
                     continue
-                
+
                 data = message["data"]
-                
+
                 try:
                     await websocket.send_text(data)
                 except WebSocketDisconnect:
                     break
-                
-                # parse the event to decide whether to close 
-                try: 
+
+                # parse the event to decide whether to close
+                try:
                     event = json.loads(data)
                     if event.get("event") in ("completed", "failed"):
                         await websocket.close()
@@ -251,4 +296,3 @@ async def stream_report_progress(
         pass
     finally:
         await redis_client.close()
-                

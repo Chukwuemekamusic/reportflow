@@ -45,7 +45,9 @@ async def test_register_user_creates_tenant_and_admin_user() -> None:
         tenant_name="Acme Corporation",
     )
 
-    with patch("app.services.auth_service.hash_password", return_value="hashed-password"):
+    with patch(
+        "app.services.auth_service.hash_password", return_value="hashed-password"
+    ):
         user = await register_user(db, payload)
 
     assert db.add.call_count == 2
@@ -99,7 +101,9 @@ def test_create_token_response_uses_expected_payload() -> None:
         role="admin",
     )
 
-    with patch("app.services.auth_service.create_access_token", return_value="signed-token") as mock_create_token:
+    with patch(
+        "app.services.auth_service.create_access_token", return_value="signed-token"
+    ) as mock_create_token:
         response = create_token_response(user)
 
     assert response.access_token == "signed-token"

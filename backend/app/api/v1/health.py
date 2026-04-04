@@ -2,6 +2,7 @@
 Health check endpoint — verifies all external dependencies are reachable.
 Used by Docker health checks, load balancers, and monitoring systems.
 """
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -22,7 +23,7 @@ router = APIRouter()
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
     summary="Health check endpoint",
-    description="Returns the health status of the API and its dependencies (database, Redis, MinIO)"
+    description="Returns the health status of the API and its dependencies (database, Redis, MinIO)",
 )
 async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
     """
@@ -38,30 +39,26 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
         result = await db.execute(text("SELECT 1"))
         result.scalar()
         services["database"] = ServiceStatus(
-            status="healthy",
-            message="Database connection successful"
+            status="healthy", message="Database connection successful"
         )
     except Exception as e:
         services["database"] = ServiceStatus(
-            status="unhealthy",
-            message=f"Database connection failed: {str(e)[:80]}"
+            status="unhealthy", message=f"Database connection failed: {str(e)[:80]}"
         )
-        
+
     # Check Redis
     try:
         r = aioredis.from_url(settings.redis_url)
         await r.ping()
         await r.aclose()
         services["redis"] = ServiceStatus(
-            status="healthy",
-            message="Redis connection successful"
+            status="healthy", message="Redis connection successful"
         )
     except Exception as e:
         services["redis"] = ServiceStatus(
-            status="unhealthy",
-            message=f"Redis connection failed: {str(e)[:80]}"
+            status="unhealthy", message=f"Redis connection failed: {str(e)[:80]}"
         )
-    
+
     # Minio / S3
     try:
         session = aioboto3.Session()
@@ -73,31 +70,28 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
         ) as s3:
             await s3.head_bucket(Bucket=settings.minio_bucket)
         services["storage"] = ServiceStatus(
-            status="healthy",
-            message="Redis connection successful"
+            status="healthy", message="Redis connection successful"
         )
     except Exception as e:
         services["storage"] = ServiceStatus(
-            status="unhealthy",
-            message=f"Database connection failed: {str(e)[:80]}"
+            status="unhealthy", message=f"Database connection failed: {str(e)[:80]}"
         )
-        
 
-    # Determine overall status 
-    overall_status = "healthy" if all(
-        service.status == "healthy" for service in services.values()
-    ) else "unhealthy"
+    # Determine overall status
+    overall_status = (
+        "healthy"
+        if all(service.status == "healthy" for service in services.values())
+        else "unhealthy"
+    )
 
     return HealthResponse(
         status=overall_status,
         timestamp=datetime.utcnow(),
         services=services,
-        version="0.1.0"
+        version="0.1.0",
     )
-    
-    
-    
-    
+
+
 # @router.get("/health")
 # async def health_check(db: AsyncSession = Depends(get_db)):
 #     """

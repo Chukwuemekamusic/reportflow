@@ -8,6 +8,7 @@ Tests the Redis cache layer for idempotency keys, including:
 - Correct UUID-to-string conversion
 - TTL configuration
 """
+
 import uuid
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch, MagicMock
@@ -60,13 +61,19 @@ async def test_create_job_caches_idempotency_key_in_redis():
     # db.add is called WITHOUT await, so it must be a synchronous Mock
     db.add = Mock(side_effect=add_job)
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 86400
             mock_settings.max_concurrent_jobs_per_user = 5
 
-            with patch("app.services.report_service.check_and_increment_active_jobs", return_value=True):
+            with patch(
+                "app.services.report_service.check_and_increment_active_jobs",
+                return_value=True,
+            ):
                 with patch("celery.current_app") as mock_celery:
                     mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
 
@@ -122,7 +129,10 @@ async def test_create_job_returns_cached_job_on_redis_hit():
     result_mock.scalar_one_or_none.return_value = existing_job
     db.execute.return_value = result_mock
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
 
@@ -177,7 +187,10 @@ async def test_create_job_falls_back_to_db_on_cache_miss():
     result_mock.scalar_one_or_none.return_value = existing_job
     db.execute.return_value = result_mock
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 86400
@@ -209,7 +222,10 @@ def test_cache_idempotency_key_converts_uuid_to_string():
     mock_redis_instance.__enter__ = Mock(return_value=mock_redis_instance)
     mock_redis_instance.__exit__ = Mock(return_value=False)
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 3600
@@ -238,7 +254,10 @@ def test_cache_idempotency_key_handles_redis_errors_gracefully():
     mock_redis_instance.__exit__ = Mock(return_value=False)
     mock_redis_instance.setex.side_effect = ConnectionError("Redis connection failed")
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 3600
@@ -249,7 +268,10 @@ def test_cache_idempotency_key_handles_redis_errors_gracefully():
 
                 # Assert - error was logged
                 mock_logger.warning.assert_called_once()
-                assert "Failed to write idempotency cache" in mock_logger.warning.call_args[0][0]
+                assert (
+                    "Failed to write idempotency cache"
+                    in mock_logger.warning.call_args[0][0]
+                )
 
 
 @pytest.mark.asyncio
@@ -289,13 +311,19 @@ async def test_idempotency_key_cache_format_is_correct():
 
     db.add = Mock(side_effect=set_job_id)
 
-    with patch("app.services.report_service._redis.Redis.from_url", return_value=mock_redis_instance):
+    with patch(
+        "app.services.report_service._redis.Redis.from_url",
+        return_value=mock_redis_instance,
+    ):
         with patch("app.services.report_service.settings") as mock_settings:
             mock_settings.redis_url = "redis://localhost:6379/0"
             mock_settings.idempotency_cache_ttl = 86400
             mock_settings.max_concurrent_jobs_per_user = 5
 
-            with patch("app.services.report_service.check_and_increment_active_jobs", return_value=True):
+            with patch(
+                "app.services.report_service.check_and_increment_active_jobs",
+                return_value=True,
+            ):
                 with patch("celery.current_app") as mock_celery:
                     mock_celery.send_task.return_value = Mock(task_id="celery-task-123")
 

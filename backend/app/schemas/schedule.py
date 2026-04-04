@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import uuid 
+import uuid
 from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 from croniter import croniter
+
 
 class ScheduleCreate(BaseModel):
     report_type: str = Field(..., pattern=r"^(sales_summary|csv_export|pdf_report)$")
@@ -17,7 +18,8 @@ class ScheduleCreate(BaseModel):
         if not croniter.is_valid(v):
             raise ValueError(f"Invalid cron expression: '{v}'")
         return v
-    
+
+
 class ScheduleUpdate(BaseModel):
     cron_expr: str | None = Field(default=None, min_length=9, max_length=100)
     priority: int | None = Field(default=None, ge=1, le=9)
@@ -30,7 +32,8 @@ class ScheduleUpdate(BaseModel):
         if v is not None and not croniter.is_valid(v):
             raise ValueError(f"Invalid cron expression: '{v}'")
         return v
-    
+
+
 class ScheduleResponse(BaseModel):
     schedule_id: uuid.UUID
     report_type: str
@@ -44,6 +47,7 @@ class ScheduleResponse(BaseModel):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
 
 class ScheduleListResponse(BaseModel):
     schedules: list[ScheduleResponse]

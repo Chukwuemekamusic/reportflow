@@ -11,6 +11,7 @@ Usage:
 This will prompt for email and password, then create a system_admin user
 in a special system tenant.
 """
+
 import asyncio
 import sys
 import getpass
@@ -66,22 +67,20 @@ async def create_system_admin():
                 if existing_user.role == "system_admin":
                     print("   This user is already a system admin.")
                 else:
-                    print("   To upgrade this user to system_admin, update the database directly:")
-                    print(f"   UPDATE users SET role='system_admin' WHERE id='{existing_user.id}';")
+                    print(
+                        "   To upgrade this user to system_admin, update the database directly:"
+                    )
+                    print(
+                        f"   UPDATE users SET role='system_admin' WHERE id='{existing_user.id}';"
+                    )
                 sys.exit(1)
 
             # Create or get the system tenant
-            result = await db.execute(
-                select(Tenant).where(Tenant.slug == "system")
-            )
+            result = await db.execute(select(Tenant).where(Tenant.slug == "system"))
             system_tenant = result.scalar_one_or_none()
 
             if not system_tenant:
-                system_tenant = Tenant(
-                    name="System",
-                    slug="system",
-                    is_active=True
-                )
+                system_tenant = Tenant(name="System", slug="system", is_active=True)
                 db.add(system_tenant)
                 await db.flush()
                 print(f"✓ Created system tenant (id: {system_tenant.id})")
@@ -92,7 +91,7 @@ async def create_system_admin():
                 email=email,
                 hashed_password=hash_password(password),
                 role="system_admin",  # ✅ System administrator role
-                is_active=True
+                is_active=True,
             )
             db.add(system_admin)
             await db.commit()
@@ -120,6 +119,7 @@ async def create_system_admin():
             await db.rollback()
             print(f"❌ Error creating system admin: {e}")
             import traceback
+
             traceback.print_exc()
             sys.exit(1)
 

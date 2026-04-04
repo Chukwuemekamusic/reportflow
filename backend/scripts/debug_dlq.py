@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Debug DLQ query"""
+
 import asyncio
 import sys
 from pathlib import Path
@@ -25,7 +26,9 @@ async def debug_dlq():
 
         print(f"Found {len(entries)} entries")
         for entry in entries:
-            print(f"  - {entry.job_id} | tenant: {entry.tenant_id} | resolved: {entry.resolved}")
+            print(
+                f"  - {entry.job_id} | tenant: {entry.tenant_id} | resolved: {entry.resolved}"
+            )
 
 
 if __name__ == "__main__":

@@ -11,9 +11,11 @@ settings = get_settings()
 # reports/{tenant_id}/{YYYY}/{MM}/{job_id}.{ext}
 # Example: reports/abc-123/2026/03/rpt-xyz.pdf
 
+
 def build_object_key(tenant_id: str, job_id: str, extension: str) -> str:
     now = datetime.now(timezone.utc)
     return f"reports/{tenant_id}/{now.year}/{now.month:02}/{job_id}.{extension}"
+
 
 # ── Session factory ────────────────────────────────────────────────────
 def _get_session():
@@ -22,13 +24,15 @@ def _get_session():
         aws_access_key_id=settings.minio_access_key,
         aws_secret_access_key=settings.minio_secret_key,
     )
-    
+
+
 def _get_client_kwargs() -> dict:
     """Returns endpoint_url for MinIO; omit for real AWS S3."""
     kwargs = {}
     if settings.storage_backend == "minio":
         kwargs["endpoint_url"] = settings.minio_endpoint
     return kwargs
+
 
 # ── Bucket initialisation ─────────────────────────────────────────────
 async def ensure_bucket_exists():
@@ -40,14 +44,16 @@ async def ensure_bucket_exists():
             logger.info(f"Bucket exists: {settings.minio_bucket}")
         except ClientError as e:
             error_code = e.response.get("Error", {}).get("Code")
-            if error_code in ("404","NoSuchBucket"):
+            if error_code in ("404", "NoSuchBucket"):
                 await s3.create_bucket(Bucket=settings.minio_bucket)
                 logger.info(f"Created bucket: {settings.minio_bucket}")
             else:
                 logger.error(f"Failed to create bucket: {error_code}")
                 raise
 
+
 # ── Upload / download ─────────────────────────────────────────────────
+
 
 async def upload_file(
     file_bytes: bytes,
@@ -68,12 +74,11 @@ async def upload_file(
         )
         logger.info(f"Uploaded {len(file_bytes)} bytes to {object_key}")
         return object_key
-    
+
+
 # presigned download url
 async def generate_presigned_url(
-    object_key: str, 
-    expires_in: int | None = None, 
-    filename_hint: str | None = None
+    object_key: str, expires_in: int | None = None, filename_hint: str | None = None
 ) -> str:
     """
     Generate a time-limited presigned URL for direct client download.
@@ -81,11 +86,12 @@ async def generate_presigned_url(
     """
     expiry_seconds = expires_in or settings.file_expiry_seconds
     session = _get_session()
-    
+
     response_headers = {}
     if filename_hint:
-        response_headers["ResponseContentDisposition"] = f'attachment; filename="{filename_hint}"'
-
+        response_headers["ResponseContentDisposition"] = (
+            f'attachment; filename="{filename_hint}"'
+        )
 
     # Use public endpoint for presigned URLs if configured, otherwise use internal endpoint
     client_kwargs = _get_client_kwargs()
@@ -96,9 +102,9 @@ async def generate_presigned_url(
         url = await s3.generate_presigned_url(
             ClientMethod="get_object",
             Params={
-                "Bucket": settings.minio_bucket, 
-                "Key": object_key, 
-                **response_headers
+                "Bucket": settings.minio_bucket,
+                "Key": object_key,
+                **response_headers,
             },
             ExpiresIn=expiry_seconds,
         )

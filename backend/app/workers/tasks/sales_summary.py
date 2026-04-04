@@ -10,6 +10,7 @@ from app.core.config import get_settings
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
+
 @celery_app.task(
     bind=True,
     base=ReportBaseTask,
@@ -31,31 +32,37 @@ def run_sales_summary(self, job_id: str, tenant_id: str, filters: dict):
         # ── 1. Fetch subscription data ───────────────────────────────────
         self.update_progress(job_id, 5, "Connecting to database...", eta_secs=90)
         data = run_async(_fetch_subscription_data(filters))
-        self.update_progress(job_id, 30, f"Fetched {len(data['subscriptions'])} subscriptions", eta_secs=70)
-        
+        self.update_progress(
+            job_id,
+            30,
+            f"Fetched {len(data['subscriptions'])} subscriptions",
+            eta_secs=70,
+        )
+
         # ── 2. Aggregate MRR metrics ─────────────────────────────────────
         self.update_progress(job_id, 35, "Aggregating MRR metrics...", eta_secs=55)
         metrics = _aggregate_metrics(data)
         self.update_progress(job_id, 70, "Aggregation complete", eta_secs=35)
-        
+
         # ── 3. Render PDF ───────────────────────────────────────
         self.update_progress(job_id, 75, "Rendering PDF ...", eta_secs=30)
         pdf_bytes = _render_pdf(metrics, filters)
         self.update_progress(job_id, 90, "PDF rendering complete", eta_secs=15)
-        
+
         # ── 4. Upload to MinIO ───────────────────────────────────
         self.update_progress(job_id, 92, "Uploading to storage...", eta_secs=10)
         from app.services.storage_service import upload_file_sync, build_object_key
+
         object_key = build_object_key(tenant_id, job_id, "pdf")
         upload_file_sync(pdf_bytes, object_key, "application/pdf")
         self.update_progress(job_id, 99, "Upload complete", eta_secs=0)
-        
+
         return object_key
-    
+
     except Exception as exc:
         logger.error(f"[{job_id}] sales_summary failed: {exc}", exc_info=True)
         raise self.retry(exc=exc)
-    
+
 
 async def _fetch_subscription_data(filters: dict) -> dict:
     """Fetch subscriptions with related customer and plan data."""
@@ -63,14 +70,14 @@ async def _fetch_subscription_data(filters: dict) -> dict:
     from app.db.models.seed.subscription import Subscription
     from app.db.models.seed.customer import Customer
     from app.db.models.seed.plan import Plan
-    
+
     async with AsyncSessionLocal() as session:
         query = (
             select(Subscription, Customer, Plan)
             .join(Customer, Subscription.customer_id == Customer.id)
             .join(Plan, Subscription.plan_id == Plan.id)
         )
-        
+
         # Apply filters
         if filters.get("date_from"):
             query = query.where(Subscription.started_at >= filters["date_from"])
@@ -82,74 +89,83 @@ async def _fetch_subscription_data(filters: dict) -> dict:
             query = query.where(Subscription.status == filters["status"])
         if filters.get("plan_ids"):
             query = query.where(Subscription.plan_id.in_(filters["plan_ids"]))
-        
+
         result = await session.execute(query)
         rows = result.all()
-        
+
         # Map rows to dict
         subscriptions = []
         for sub, customer, plan in rows:
-            subscriptions.append({
-                "id": str(sub.id),
-            "status": sub.status,
-            "mrr": float(sub.mrr),
-            "billing_cycle": sub.billing_cycle,
-            "seats": sub.seats,
-            "started_at": sub.started_at.isoformat(),
-            "plan_name": plan.name,
-            "customer_name": customer.company_name,
-            "region": customer.region,
-            })
-        
+            subscriptions.append(
+                {
+                    "id": str(sub.id),
+                    "status": sub.status,
+                    "mrr": float(sub.mrr),
+                    "billing_cycle": sub.billing_cycle,
+                    "seats": sub.seats,
+                    "started_at": sub.started_at.isoformat(),
+                    "plan_name": plan.name,
+                    "customer_name": customer.company_name,
+                    "region": customer.region,
+                }
+            )
+
         return {
             "subscriptions": subscriptions,
         }
-        
+
+
 # Aggreation (pure python)
+
 
 def _aggregate_metrics(data: dict) -> dict:
     """Aggregate MRR metrics from subscription data."""
     subscriptions = data["subscriptions"]
     total_mrr = sum(s["mrr"] for s in subscriptions if s["status"] == "active")
     churned_mrr = sum(s["mrr"] for s in subscriptions if s["status"] == "cancelled")
-    
+
     # MRR by reion
     mrr_by_region: dict[str, float] = {}
     for s in subscriptions:
         if s["status"] != "active":
             continue
         mrr_by_region[s["region"]] = mrr_by_region.get(s["region"], 0) + s["mrr"]
-        
+
     # MRR by plan
     mrr_by_plan: dict[str, float] = {}
     for s in subscriptions:
         if s["status"] != "active":
             continue
         mrr_by_plan[s["plan_name"]] = mrr_by_plan.get(s["plan_name"], 0) + s["mrr"]
-        
+
     # Top 10 customers by MRR
     customer_mrr: dict[str, float] = {}
     for s in subscriptions:
         if s["status"] != "active":
             continue
-        customer_mrr[s["customer_name"]] = customer_mrr.get(s["customer_name"], 0) + s["mrr"]
-        
+        customer_mrr[s["customer_name"]] = (
+            customer_mrr.get(s["customer_name"], 0) + s["mrr"]
+        )
+
     top_customers = sorted(customer_mrr.items(), key=lambda x: x[1], reverse=True)[:10]
-    
+
     return {
         "total_mrr": round(total_mrr, 2),
         "churned_mrr": round(churned_mrr, 2),
         "net_mrr": round(total_mrr - churned_mrr, 2),
-        "active_subscriptions": len([s for s in subscriptions if s["status"] == "active"]),
+        "active_subscriptions": len(
+            [s for s in subscriptions if s["status"] == "active"]
+        ),
         "total_subscriptions": len(subscriptions),
         "mrr_by_region": {k: round(v, 2) for k, v in sorted(mrr_by_region.items())},
         "mrr_by_plan": {k: round(v, 2) for k, v in sorted(mrr_by_plan.items())},
         "top_customers": [{"name": k, "mrr": round(v, 2)} for k, v in top_customers],
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
-    
+
 
 # PDF rendering
+
 
 def _render_pdf(metrics: dict, filters: dict) -> bytes:
     """Render metrics dict to a PDF using Jinja2 + WeasyPrint."""

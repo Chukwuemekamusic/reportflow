@@ -6,6 +6,7 @@ Run this test INSIDE the Docker container:
 
 This test uses the real Redis instance running in Docker.
 """
+
 import redis
 import pytest
 import pytest_asyncio
@@ -25,7 +26,9 @@ def redis_client():
 
 
 @pytest.mark.asyncio
-async def test_idempotency_key_is_cached_in_redis(client: AsyncClient, redis_client: redis.Redis):
+async def test_idempotency_key_is_cached_in_redis(
+    client: AsyncClient, redis_client: redis.Redis
+):
     """
     Test that creating a job with an idempotency key writes to Redis cache.
     Verifies the cache key format and TTL.
@@ -77,13 +80,19 @@ async def test_idempotency_key_is_cached_in_redis(client: AsyncClient, redis_cli
     # ────────────────────────────────────────────────────────────
     # Find the cache key by pattern since we don't have tenant_id readily available
     cache_keys = redis_client.keys(f"idempotency:*:{idempotency_key}")
-    assert len(cache_keys) == 1, f"Expected 1 cache key matching pattern, found {len(cache_keys)}"
+    assert len(cache_keys) == 1, (
+        f"Expected 1 cache key matching pattern, found {len(cache_keys)}"
+    )
 
     cache_key = cache_keys[0]
     cached_job_id = redis_client.get(cache_key)
 
-    assert cached_job_id is not None, f"Expected cache key '{cache_key}' not found in Redis"
-    assert cached_job_id == job_id, f"Cached job ID '{cached_job_id}' doesn't match actual '{job_id}'"
+    assert cached_job_id is not None, (
+        f"Expected cache key '{cache_key}' not found in Redis"
+    )
+    assert cached_job_id == job_id, (
+        f"Cached job ID '{cached_job_id}' doesn't match actual '{job_id}'"
+    )
 
     # ────────────────────────────────────────────────────────────
     # Step 4: Verify TTL is set correctly (24 hours = 86400 seconds)
@@ -94,7 +103,9 @@ async def test_idempotency_key_is_cached_in_redis(client: AsyncClient, redis_cli
 
 
 @pytest.mark.asyncio
-async def test_idempotency_cache_hit_returns_same_job(client: AsyncClient, redis_client: redis.Redis):
+async def test_idempotency_cache_hit_returns_same_job(
+    client: AsyncClient, redis_client: redis.Redis
+):
     """
     Test that submitting the same idempotency key twice returns the cached job
     on the second request (fast path via Redis, not DB).
@@ -166,7 +177,9 @@ async def test_idempotency_cache_hit_returns_same_job(client: AsyncClient, redis
 
 
 @pytest.mark.asyncio
-async def test_cache_survives_across_multiple_requests(client: AsyncClient, redis_client: redis.Redis):
+async def test_cache_survives_across_multiple_requests(
+    client: AsyncClient, redis_client: redis.Redis
+):
     """
     Test that the Redis cache persists across multiple rapid requests
     and consistently returns the same cached job.
@@ -226,7 +239,9 @@ async def test_cache_survives_across_multiple_requests(client: AsyncClient, redi
 
 
 @pytest.mark.asyncio
-async def test_cache_isolation_between_tenants(client: AsyncClient, redis_client: redis.Redis):
+async def test_cache_isolation_between_tenants(
+    client: AsyncClient, redis_client: redis.Redis
+):
     """
     Test that idempotency keys are isolated per tenant.
     Same key for different tenants should create separate jobs.

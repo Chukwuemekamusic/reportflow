@@ -2,6 +2,7 @@
 User management service for admin operations within a tenant.
 Handles creating, listing, and deactivating users.
 """
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import hash_password
@@ -51,8 +52,7 @@ async def create_user_in_tenant(
     # Check if email already exists in this tenant
     result = await db.execute(
         select(User).where(
-            User.tenant_id == admin_user.tenant_id,
-            User.email == payload.email
+            User.tenant_id == admin_user.tenant_id, User.email == payload.email
         )
     )
     existing_user = result.scalar_one_or_none()
@@ -135,10 +135,7 @@ async def deactivate_user(
 
     # Get user from same tenant
     result = await db.execute(
-        select(User).where(
-            User.id == user_id,
-            User.tenant_id == admin_user.tenant_id
-        )
+        select(User).where(User.id == user_id, User.tenant_id == admin_user.tenant_id)
     )
     user = result.scalar_one_or_none()
 

@@ -16,14 +16,15 @@ engine = create_async_engine(
 
 # Session factory - creates new sessions on demand
 AsyncSessionLocal = async_sessionmaker(
-    engine, 
-    class_=AsyncSession, 
-    expire_on_commit=False
+    engine, class_=AsyncSession, expire_on_commit=False
 )
+
 
 class Base(DeclarativeBase):
     """All ORM models inherit from this base class"""
+
     pass
+
 
 # async def get_db() -> AsyncSession:
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
@@ -40,4 +41,3 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
             raise
         finally:
             await session.close()
-
