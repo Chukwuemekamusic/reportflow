@@ -34,6 +34,15 @@ export interface Tenant {
   total_jobs: number;
 }
 
+export interface CleanupJobsResponse {
+  deleted?: number;
+  would_delete?: number;
+  cutoff_date: string;
+  status_filter: string;
+  older_than_days: number;
+  dry_run?: boolean;
+}
+
 export const adminApi = {
   getQueue: () =>
     apiClient.get<QueueStatus>("/admin/queue").then((r) => r.data),
@@ -54,4 +63,12 @@ export const adminApi = {
       .then((r) => r.data),
   updateTenant: (id: string, body: { is_active: boolean }) =>
     apiClient.put(`/admin/tenants/${id}`, body).then((r) => r.data),
+  cleanupJobs: (params: {
+    older_than_days: number;
+    status_filter?: string;
+    dry_run?: boolean;
+  }) =>
+    apiClient
+      .delete<CleanupJobsResponse>("/admin/jobs/cleanup", { params })
+      .then((r) => r.data),
 };
