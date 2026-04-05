@@ -4,6 +4,7 @@ from celery import Celery
 from celery.signals import worker_process_init, worker_process_shutdown
 from kombu import Queue, Exchange
 from app.core.config import get_settings
+from celery.schedules import crontab
 
 settings = get_settings()
 
@@ -76,8 +77,6 @@ celery_app.conf.task_soft_time_limit = (
 # Result_expiry
 celery_app.conf.result_expires = 60 * 60 * 24  # 24 hours
 
-# Beat schedule
-from celery.schedules import crontab
 
 celery_app.conf.beat_schedule = {
     "dispatch-scheduled-jobs": {

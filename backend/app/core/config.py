@@ -30,8 +30,12 @@ class Settings(BaseSettings):
     celery_result_backend: str = "redis://redis:6379/2"
     celery_task_max_retries: int = 3
     celery_task_timeout_seconds: int = 600
-    beat_schedule_interval: float = 60.0  # seconds - how often Beat checks for due schedules
-    job_retention_days: int = 30  # days - how long to keep completed/failed jobs before cleanup
+    beat_schedule_interval: float = (
+        60.0  # seconds - how often Beat checks for due schedules
+    )
+    job_retention_days: int = (
+        30  # days - how long to keep completed/failed jobs before cleanup
+    )
 
     # File Storage (MinIO / S3)
     storage_backend: str = "minio"

@@ -60,4 +60,6 @@ async def _cleanup() -> None:
                 f"[cleanup] Deleted {deleted} old job(s) (older than {retention_days} days, cutoff={cutoff.isoformat()})"
             )
         else:
-            logger.debug(f"[cleanup] No jobs to delete (retention: {retention_days} days)")
+            logger.debug(
+                f"[cleanup] No jobs to delete (retention: {retention_days} days)"
+            )
