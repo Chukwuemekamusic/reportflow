@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { usePortalAuth } from "@/contexts/PortalAuthContext";
+import { getApiErrorDetail } from "@/api/client";
 import { portalApi, type SubmitReportRequest } from "@/api/portal";
 import { useWebSocket, type WSEvent } from "@/hooks/useWebSocket";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Download, Loader2, CheckCircle2, XCircle, Zap } from "lucide-react";
+
+type PortalFilterRegion = NonNullable<
+  SubmitReportRequest["filters"]["region"]
+>;
+type PortalFilterStatus = NonNullable<
+  SubmitReportRequest["filters"]["status"]
+>;
 
 // ── Progress bar component ─────────────────────────────────────────────
 function ProgressBar({ value }: { value: number }) {
@@ -66,8 +74,8 @@ export function PortalDashboard() {
   // Form state
   const [reportType, setReportType] =
     useState<SubmitReportRequest["report_type"]>("sales_summary");
-  const [region, setRegion] = useState("EMEA");
-  const [status, setStatus] = useState("active");
+  const [region, setRegion] = useState<PortalFilterRegion>("EMEA");
+  const [status, setStatus] = useState<PortalFilterStatus>("active");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
@@ -127,7 +135,7 @@ export function PortalDashboard() {
       const job = await portalApi.submitReport(token, {
         report_type: reportType,
         priority: 5,
-        filters: { region: region as any, status: status as any },
+        filters: { region, status },
       });
 
       // Initialise progress state immediately — before WS connects
@@ -143,11 +151,9 @@ export function PortalDashboard() {
 
       // Connect to WebSocket stream
       connect(job.job_id, token);
-    } catch (err: any) {
-      const detail = err.response?.data?.detail;
-      setSubmitError(
-        typeof detail === "string" ? detail : "Failed to submit report.",
-      );
+    } catch (err: unknown) {
+      const detail = getApiErrorDetail(err);
+      setSubmitError(detail ?? "Failed to submit report.");
     } finally {
       setSubmitting(false);
     }
@@ -184,7 +190,9 @@ export function PortalDashboard() {
                 <Label>Report type</Label>
                 <Select
                   value={reportType}
-                  onValueChange={(v) => setReportType(v as any)}
+                  onValueChange={(v) =>
+                    setReportType(v as SubmitReportRequest["report_type"])
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -206,7 +214,10 @@ export function PortalDashboard() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <Label>Region</Label>
-                  <Select value={region} onValueChange={setRegion}>
+                  <Select
+                    value={region}
+                    onValueChange={(v) => setRegion(v as PortalFilterRegion)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -219,7 +230,10 @@ export function PortalDashboard() {
                 </div>
                 <div className="space-y-1">
                   <Label>Subscription status</Label>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Select
+                    value={status}
+                    onValueChange={(v) => setStatus(v as PortalFilterStatus)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>

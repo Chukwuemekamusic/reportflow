@@ -1,0 +1,114 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  COMPOSE_FILE: docker-compose.yml
+  WORKING_DIR: reportflow
+  # docker compose up --wait (Compose V2.29+): block until healthchecks pass / containers running
+  COMPOSE_WAIT_TIMEOUT: "300"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  integration:
+    name: Docker Compose Health Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create backend .env file
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          cat > backend/.env << EOF
+          DATABASE_URL=postgresql+asyncpg://reportflow:password@db:5432/reportflow
+          REDIS_URL=redis://redis:6379/0
+          REDIS_PUBSUB_URL=redis://redis:6379/1
+          CELERY_BROKER_URL=redis://redis:6379/0
+          CELERY_RESULT_BACKEND=redis://redis:6379/2
+          SECRET_KEY=integration-test-secret-key-min-32-chars-long
+          MINIO_ENDPOINT=minio:9000
+          MINIO_ACCESS_KEY=minioadmin
+          MINIO_SECRET_KEY=minioadmin
+          MINIO_BUCKET=reportflow-files
+          MINIO_USE_SSL=false
+          EOF
+
+      - name: Create frontend .env file
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          cat > frontend/.env << EOF
+          VITE_API_URL=http://localhost:8000
+          EOF
+
+      - name: Start services with docker compose
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          docker compose up -d --build --wait --wait-timeout "${{ env.COMPOSE_WAIT_TIMEOUT }}"
+
+      - name: Verify container health (compose JSON)
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          docker compose ps --format json | jq -s -e '
+            all(.[];
+              .State == "running"
+              and ((.Health // "") == "" or .Health == "healthy")
+            )
+          '
+
+      - name: Smoke test - API health endpoint
+        run: |
+          echo "Testing API health endpoint..."
+          curl -f http://localhost:8000/api/v1/health || (echo "❌ API health check failed" && exit 1)
+          echo "✅ API health endpoint responding"
+
+      - name: Smoke test - API docs endpoint
+        run: |
+          echo "Testing API docs endpoint..."
+          curl -f http://localhost:8000/docs || (echo "❌ API docs check failed" && exit 1)
+          echo "✅ API docs endpoint responding"
+
+      - name: Smoke test - Frontend is serving
+        run: |
+          echo "Testing frontend is serving..."
+          curl -f http://localhost:5173 || (echo "❌ Frontend check failed" && exit 1)
+          echo "✅ Frontend is serving"
+
+      - name: Check all services are running
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "Checking service status..."
+          docker compose ps
+          echo ""
+          echo "Checking for any exited containers..."
+          if docker compose ps -a | grep -q "Exited"; then
+            echo "❌ Some services have exited"
+            docker compose ps -a
+            exit 1
+          fi
+          echo "✅ All services are running"
+
+      - name: Show logs on failure
+        if: failure()
+        working-directory: ${{ env.WORKING_DIR }}
+        run: |
+          echo "=== Docker Compose Services Status ==="
+          docker compose ps -a
+          echo ""
+          echo "=== API Logs ==="
+          docker compose logs api --tail=100
+          echo ""
+          echo "=== Frontend Logs ==="
+          docker compose logs frontend --tail=50
+
+      - name: Cleanup
+        if: always()
+        working-directory: ${{ env.WORKING_DIR }}
+        run: docker compose down -v

@@ -25,7 +25,10 @@ export function useWebSocket(options: UseWebSocketOptions = {}) {
   const [lastEvent, setLastEvent] = useState<WSEvent | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const optionsRef = useRef(options);
-  optionsRef.current = options; // keep options ref fresh without re-subscribing
+
+  useEffect(() => {
+    optionsRef.current = options;
+  });
 
   const connect = useCallback((jobId: string, token: string) => {
     // Close any existing connection before opening a new one

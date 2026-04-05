@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { adminApi, type QueueStatus } from "@/api/admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { useEffect, useState } from "react"; // useRef,
+import { useEffect, useState } from "react";
 
 // Rolling buffer — keeps last 60 data points for sparkline
 function useQueueHistory(current: QueueStatus | undefined) {
@@ -13,7 +13,9 @@ function useQueueHistory(current: QueueStatus | undefined) {
       t: new Date().toLocaleTimeString(),
       total: current.total_pending,
     };
-    setHistory((prev) => [...prev.slice(-59), point]);
+    queueMicrotask(() => {
+      setHistory((prev) => [...prev.slice(-59), point]);
+    });
   }, [current]);
   return history;
 }

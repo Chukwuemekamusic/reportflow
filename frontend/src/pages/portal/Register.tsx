@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getApiErrorDetail } from "@/api/client";
 import { portalApi } from "@/api/portal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,12 +38,10 @@ export function Register() {
     try {
       await portalApi.register(form);
       navigate("/portal/login?registered=true");
-    } catch (err: any) {
-      const detail = err.response?.data?.detail;
+    } catch (err: unknown) {
+      const detail = getApiErrorDetail(err);
       setError(
-        typeof detail === "string"
-          ? detail
-          : "Registration failed. Please try again.",
+        detail ?? "Registration failed. Please try again.",
       );
     } finally {
       setLoading(false);

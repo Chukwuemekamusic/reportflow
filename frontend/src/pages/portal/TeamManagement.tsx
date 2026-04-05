@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { usePortalAuth } from "@/contexts/PortalAuthContext";
+import { getApiErrorDetail } from "@/api/client";
 import { usersApi, type CreateUserRequest } from "@/api/users";
 import {
   Table,
@@ -78,10 +79,12 @@ export function TeamManagement() {
         description: "The new team member has been invited successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Failed to create user",
-        description: error.response?.data?.detail || error.message,
+        description:
+          getApiErrorDetail(error) ??
+          (error instanceof Error ? error.message : "Request failed"),
         variant: "destructive",
       });
     },
@@ -98,10 +101,12 @@ export function TeamManagement() {
         description: "The team member has been deactivated successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       toast({
         title: "Failed to deactivate user",
-        description: error.response?.data?.detail || error.message,
+        description:
+          getApiErrorDetail(error) ??
+          (error instanceof Error ? error.message : "Request failed"),
         variant: "destructive",
       });
     },
