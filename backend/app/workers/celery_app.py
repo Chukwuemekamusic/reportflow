@@ -19,6 +19,7 @@ celery_app = Celery(
         "app.workers.tasks.csv_export",  # phase 3
         "app.workers.tasks.pdf_report",  # phase 3
         "app.workers.tasks.beat_schedule",  # phase 5
+        "app.workers.tasks.cleanup_jobs",  # job retention cleanup
     ],
 )
 
@@ -76,13 +77,23 @@ celery_app.conf.task_soft_time_limit = (
 celery_app.conf.result_expires = 60 * 60 * 24  # 24 hours
 
 # Beat schedule
+from celery.schedules import crontab
+
 celery_app.conf.beat_schedule = {
     "dispatch-scheduled-jobs": {
         "task": "app.workers.tasks.beat_schedule.dispatch_scheduled_jobs",
-        "schedule": 60.0,  # seconds — Beat fires this every minute
+        "schedule": settings.beat_schedule_interval,  # configurable via BEAT_SCHEDULE_INTERVAL env var
         "options": {
             "queue": "low",
             "priority": 9,  # lowest priority — never starve real report jobs
+        },
+    },
+    "cleanup-old-jobs": {
+        "task": "app.workers.tasks.cleanup_jobs.cleanup_old_jobs",
+        "schedule": crontab(hour=3, minute=0),  # Daily at 03:00 UTC
+        "options": {
+            "queue": "low",
+            "priority": 9,
         },
     },
 }

@@ -7,6 +7,21 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source authentication helper (includes default credentials)
 source "${SCRIPT_DIR}/lib/auth_helper.sh"
 
+# Cleanup function - runs on EXIT (success or failure)
+cleanup_schedules() {
+  if [ -n "$SCHEDULE_ID" ]; then
+    echo -e "\n${YELLOW}Cleaning up schedule ${SCHEDULE_ID}...${NC}" >&2
+    curl -s -X DELETE "${API_BASE}/schedules/${SCHEDULE_ID}" \
+      -H "Authorization: Bearer $TOKEN" > /dev/null 2>&1 || true
+  fi
+  if [ -n "$IMMEDIATE_ID" ]; then
+    echo -e "${YELLOW}Cleaning up immediate schedule ${IMMEDIATE_ID}...${NC}" >&2
+    curl -s -X DELETE "${API_BASE}/schedules/${IMMEDIATE_ID}" \
+      -H "Authorization: Bearer $TOKEN" > /dev/null 2>&1 || true
+  fi
+}
+trap cleanup_schedules EXIT
+
 # Authenticate (will use existing credentials or register new user)
 quick_auth
 

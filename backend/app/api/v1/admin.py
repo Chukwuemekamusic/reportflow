@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, delete
 
 from app.db.models.report_job import ReportJob
 from app.db.models.dead_letter import DeadLetterQueue
@@ -9,7 +9,7 @@ from app.db.models.user import User
 
 from app.core.dependencies import get_db, require_system_admin
 from app.core.config import get_settings
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 settings = get_settings()
@@ -328,3 +328,81 @@ async def update_tenant(
         raise HTTPException(status_code=404, detail="Tenant not found")
     await db.commit()
     return {"id": str(tenant.id), "is_active": tenant.is_active}
+
+
+@router.delete("/jobs/cleanup", summary="Bulk delete old completed/failed jobs")
+async def bulk_cleanup_jobs(
+    older_than_days: int = Query(
+        30,
+        ge=1,
+        le=365,
+        description="Delete jobs older than this many days",
+    ),
+    status_filter: str = Query(
+        "completed",
+        pattern="^(completed|failed|cancelled|all)$",
+        description="Job status to delete: completed, failed, cancelled, or all terminal states",
+    ),
+    dry_run: bool = Query(
+        False,
+        description="If true, returns count without deleting",
+    ),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Delete old jobs in terminal states (completed, failed, cancelled).
+
+    **System admin only** - affects all tenants across the platform.
+
+    Use `dry_run=true` to preview how many jobs would be deleted without actually deleting them.
+
+    **Examples:**
+    - `DELETE /api/admin/jobs/cleanup?older_than_days=30` - Delete completed jobs older than 30 days
+    - `DELETE /api/admin/jobs/cleanup?older_than_days=7&status_filter=all` - Delete all terminal jobs older than 7 days
+    - `DELETE /api/admin/jobs/cleanup?older_than_days=90&dry_run=true` - Preview what would be deleted
+    """
+    cutoff = datetime.now(timezone.utc) - timedelta(days=older_than_days)
+
+    # Build delete query
+    query = delete(ReportJob).where(ReportJob.created_at < cutoff)
+
+    if status_filter != "all":
+        query = query.where(ReportJob.status == status_filter)
+    else:
+        query = query.where(ReportJob.status.in_(["completed", "failed", "cancelled"]))
+
+    if dry_run:
+        # Count matching jobs without deleting
+        count_query = (
+            select(func.count())
+            .select_from(ReportJob)
+            .where(ReportJob.created_at < cutoff)
+        )
+        if status_filter != "all":
+            count_query = count_query.where(ReportJob.status == status_filter)
+        else:
+            count_query = count_query.where(
+                ReportJob.status.in_(["completed", "failed", "cancelled"])
+            )
+
+        result = await db.execute(count_query)
+        count = result.scalar()
+
+        return {
+            "dry_run": True,
+            "would_delete": count,
+            "cutoff_date": cutoff.isoformat(),
+            "status_filter": status_filter,
+            "older_than_days": older_than_days,
+        }
+
+    # Execute deletion
+    result = await db.execute(query)
+    await db.commit()
+
+    return {
+        "deleted": result.rowcount,
+        "cutoff_date": cutoff.isoformat(),
+        "status_filter": status_filter,
+        "older_than_days": older_than_days,
+    }
