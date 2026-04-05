@@ -9,7 +9,6 @@ on:
 
 env:
   COMPOSE_FILE: docker-compose.yml
-  WORKING_DIR: reportflow
   # docker compose up --wait (Compose V2.29+): block until healthchecks pass / containers running
   COMPOSE_WAIT_TIMEOUT: "300"
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -25,7 +24,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create backend .env file
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           cat > backend/.env << EOF
           DATABASE_URL=postgresql+asyncpg://reportflow:password@db:5432/reportflow
@@ -42,19 +40,16 @@ jobs:
           EOF
 
       - name: Create frontend .env file
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           cat > frontend/.env << EOF
           VITE_API_URL=http://localhost:8000
           EOF
 
       - name: Start services with docker compose
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           docker compose up -d --build --wait --wait-timeout "${{ env.COMPOSE_WAIT_TIMEOUT }}"
 
       - name: Verify container health (compose JSON)
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           docker compose ps --format json | jq -s -e '
             all(.[];
@@ -82,7 +77,6 @@ jobs:
           echo "✅ Frontend is serving"
 
       - name: Check all services are running
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           echo "Checking service status..."
           docker compose ps
@@ -97,7 +91,6 @@ jobs:
 
       - name: Show logs on failure
         if: failure()
-        working-directory: ${{ env.WORKING_DIR }}
         run: |
           echo "=== Docker Compose Services Status ==="
           docker compose ps -a
@@ -110,5 +103,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        working-directory: ${{ env.WORKING_DIR }}
         run: docker compose down -v
