@@ -84,7 +84,7 @@ jobs:
       CELERY_BROKER_URL: redis://localhost:6379/0
       CELERY_RESULT_BACKEND: redis://localhost:6379/2
       SECRET_KEY: test-secret-key-min-32-chars-long-for-jwt-signing
-      MINIO_ENDPOINT: localhost:9000
+      MINIO_ENDPOINT: http://localhost:9000
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: reportflow-files
