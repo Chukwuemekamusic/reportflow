@@ -64,6 +64,9 @@ class ReportJobResponse(BaseModel):
     error_message: str | None = None
     retry_count: int = 0
     schedule_id: uuid.UUID | None = None
+    filters: dict[str, Any] | None = Field(
+        None, description="Report-specific filters applied to this job"
+    )
     created_at: datetime
     started_at: datetime | None = None
     completed_at: datetime | None = None
@@ -106,6 +109,7 @@ def job_to_response(job: ReportJob, base_url: str = "") -> ReportJobResponse:
         error_message=job.error_message,
         retry_count=job.retry_count,
         schedule_id=job.schedule_id,
+        filters=job.filters,
         created_at=job.created_at,
         started_at=job.started_at,
         completed_at=job.completed_at,

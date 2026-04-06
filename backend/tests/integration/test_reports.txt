@@ -60,19 +60,19 @@ async def test_cancel_queued_job(client: AsyncClient, auth_headers: dict):
 async def test_cannot_access_another_tenants_job(client: AsyncClient):
     # Tenant A
     await client.post("/api/v1/auth/register", json={
-        "email": "a@corp.com", "password": "pass123", "tenant_name": "Corp A"
+        "email": "a@corp.com", "password": "password123", "tenant_name": "Corp A"
     })
     token_a = (await client.post("/api/v1/auth/token", json={
-        "email": "a@corp.com", "password": "pass123"
+        "email": "a@corp.com", "password": "password123"
     })).json()["access_token"]
     headers_a = {"Authorization": f"Bearer {token_a}"}
 
     # Tenant B
     await client.post("/api/v1/auth/register", json={
-        "email": "b@corp.com", "password": "pass123", "tenant_name": "Corp B"
+        "email": "b@corp.com", "password": "password123", "tenant_name": "Corp B"
     })
     token_b = (await client.post("/api/v1/auth/token", json={
-        "email": "b@corp.com", "password": "pass123"
+        "email": "b@corp.com", "password": "password123"
     })).json()["access_token"]
     headers_b = {"Authorization": f"Bearer {token_b}"}
 

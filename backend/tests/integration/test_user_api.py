@@ -10,16 +10,14 @@ This test uses the real database running in Docker.
 import pytest
 import pytest_asyncio
 from httpx import AsyncClient
-from datetime import datetime
 
 
 @pytest_asyncio.fixture(scope="function")
-async def admin_auth(client: AsyncClient):
+async def admin_auth(client: AsyncClient, unique_id: int):
     """Register a new tenant with admin user and return auth headers."""
-    timestamp = int(datetime.now().timestamp())
-    email = f"admin-{timestamp}@example.com"
+    email = f"admin-{unique_id}@example.com"
     password = "adminpass123"
-    tenant_name = f"AdminTenant-{timestamp}"
+    tenant_name = f"AdminTenant-{unique_id}"
 
     # Register admin user
     register_response = await client.post(
@@ -46,6 +44,7 @@ async def admin_auth(client: AsyncClient):
         "headers": {"Authorization": f"Bearer {token}"},
         "user_id": user_data["id"],
         "tenant_id": user_data["tenant_id"],
+        "unique_id": unique_id,  # Pass through for tests that need additional unique data
     }
 
 
@@ -53,12 +52,14 @@ async def admin_auth(client: AsyncClient):
 async def test_create_user_as_admin(client: AsyncClient, admin_auth: dict):
     """Test that an admin can create a new user in their tenant."""
     headers = admin_auth["headers"]
+    unique_id = admin_auth["unique_id"]
+    email = f"newmember-{unique_id}@example.com"
 
     # Create a member user
     create_response = await client.post(
         "/api/v1/users",
         json={
-            "email": "newmember@example.com",
+            "email": email,
             "password": "memberpass123",
             "role": "member",
         },
@@ -67,7 +68,7 @@ async def test_create_user_as_admin(client: AsyncClient, admin_auth: dict):
 
     assert create_response.status_code == 201
     user_data = create_response.json()
-    assert user_data["email"] == "newmember@example.com"
+    assert user_data["email"] == email
     assert user_data["role"] == "member"
     assert user_data["tenant_id"] == admin_auth["tenant_id"]
     assert user_data["is_active"] is True
@@ -79,12 +80,14 @@ async def test_create_user_with_duplicate_email_in_same_tenant(
 ):
     """Test that creating a user with duplicate email in same tenant fails."""
     headers = admin_auth["headers"]
+    unique_id = admin_auth["unique_id"]
+    email = f"duplicate-{unique_id}@example.com"
 
     # Create first user
     create_response1 = await client.post(
         "/api/v1/users",
         json={
-            "email": "duplicate@example.com",
+            "email": email,
             "password": "password123",
             "role": "member",
         },
@@ -96,7 +99,7 @@ async def test_create_user_with_duplicate_email_in_same_tenant(
     create_response2 = await client.post(
         "/api/v1/users",
         json={
-            "email": "duplicate@example.com",
+            "email": email,
             "password": "password456",
             "role": "member",
         },
@@ -110,14 +113,14 @@ async def test_create_user_with_duplicate_email_in_same_tenant(
 async def test_list_users_as_admin(client: AsyncClient, admin_auth: dict):
     """Test that an admin can list users in their tenant."""
     headers = admin_auth["headers"]
-    timestamp = int(datetime.now().timestamp())
+    unique_id = admin_auth["unique_id"]
 
     # Create two users with unique emails
     await client.post(
         "/api/v1/users",
         json={
-            "email": f"user1-{timestamp}@example.com",
-            "password": "pass123",
+            "email": f"user1-{unique_id}@example.com",
+            "password": "password123",
             "role": "member",
         },
         headers=headers,
@@ -125,8 +128,8 @@ async def test_list_users_as_admin(client: AsyncClient, admin_auth: dict):
     await client.post(
         "/api/v1/users",
         json={
-            "email": f"user2-{timestamp}@example.com",
-            "password": "pass123",
+            "email": f"user2-{unique_id}@example.com",
+            "password": "password123",
             "role": "member",
         },
         headers=headers,
@@ -163,14 +166,14 @@ async def test_list_users_with_pagination(client: AsyncClient, admin_auth: dict)
 async def test_deactivate_user_as_admin(client: AsyncClient, admin_auth: dict):
     """Test that an admin can deactivate a user."""
     headers = admin_auth["headers"]
-    timestamp = int(datetime.now().timestamp())
+    unique_id = admin_auth["unique_id"]
 
     # Create a user to deactivate (with unique email)
     create_response = await client.post(
         "/api/v1/users",
         json={
-            "email": f"todeactivate-{timestamp}@example.com",
-            "password": "pass123",
+            "email": f"todeactivate-{unique_id}@example.com",
+            "password": "password123",
             "role": "member",
         },
         headers=headers,
@@ -222,10 +225,10 @@ async def test_deactivate_nonexistent_user(client: AsyncClient, admin_auth: dict
 async def test_create_user_requires_admin_role(client: AsyncClient, admin_auth: dict):
     """Test that non-admin users cannot create users."""
     admin_headers = admin_auth["headers"]
-    timestamp = int(datetime.now().timestamp())
+    unique_id = admin_auth["unique_id"]
 
     # Create a member user (with unique email)
-    member_email = f"member-{timestamp}@example.com"
+    member_email = f"member-{unique_id}@example.com"
     create_response = await client.post(
         "/api/v1/users",
         json={
@@ -249,8 +252,8 @@ async def test_create_user_requires_admin_role(client: AsyncClient, admin_auth: 
     create_as_member_response = await client.post(
         "/api/v1/users",
         json={
-            "email": f"another-{timestamp}@example.com",
-            "password": "pass123",
+            "email": f"another-{unique_id}@example.com",
+            "password": "password123",
             "role": "member",
         },
         headers=member_headers,
@@ -261,23 +264,22 @@ async def test_create_user_requires_admin_role(client: AsyncClient, admin_auth: 
 
 
 @pytest.mark.asyncio
-async def test_users_are_isolated_by_tenant(client: AsyncClient):
+async def test_users_are_isolated_by_tenant(client: AsyncClient, unique_id: int):
     """Test that users can only see users in their own tenant."""
     # Create two separate tenants with admin users
-    timestamp = int(datetime.now().timestamp())
 
     # Tenant 1
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": f"admin1-{timestamp}@example.com",
-            "password": "pass123",
-            "tenant_name": f"Tenant1-{timestamp}",
+            "email": f"admin1-{unique_id}@example.com",
+            "password": "password123",
+            "tenant_name": f"Tenant1-{unique_id}",
         },
     )
     token1_response = await client.post(
         "/api/v1/auth/token",
-        json={"email": f"admin1-{timestamp}@example.com", "password": "pass123"},
+        json={"email": f"admin1-{unique_id}@example.com", "password": "password123"},
     )
     token1 = token1_response.json()["access_token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
@@ -286,30 +288,30 @@ async def test_users_are_isolated_by_tenant(client: AsyncClient):
     await client.post(
         "/api/v1/auth/register",
         json={
-            "email": f"admin2-{timestamp}@example.com",
-            "password": "pass123",
-            "tenant_name": f"Tenant2-{timestamp}",
+            "email": f"admin2-{unique_id}@example.com",
+            "password": "password123",
+            "tenant_name": f"Tenant2-{unique_id}",
         },
     )
     token2_response = await client.post(
         "/api/v1/auth/token",
-        json={"email": f"admin2-{timestamp}@example.com", "password": "pass123"},
+        json={"email": f"admin2-{unique_id}@example.com", "password": "password123"},
     )
     token2 = token2_response.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
 
-    # Create users in each tenant (using timestamps for uniqueness)
-    tenant1_user_email = f"tenant1user-{timestamp}@example.com"
-    tenant2_user_email = f"tenant2user-{timestamp}@example.com"
+    # Create users in each tenant (using unique_id for uniqueness)
+    tenant1_user_email = f"tenant1user-{unique_id}@example.com"
+    tenant2_user_email = f"tenant2user-{unique_id}@example.com"
 
     await client.post(
         "/api/v1/users",
-        json={"email": tenant1_user_email, "password": "pass123", "role": "member"},
+        json={"email": tenant1_user_email, "password": "password123", "role": "member"},
         headers=headers1,
     )
     await client.post(
         "/api/v1/users",
-        json={"email": tenant2_user_email, "password": "pass123", "role": "member"},
+        json={"email": tenant2_user_email, "password": "password123", "role": "member"},
         headers=headers2,
     )
 

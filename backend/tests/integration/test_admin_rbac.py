@@ -14,12 +14,11 @@ from datetime import datetime
 
 
 @pytest_asyncio.fixture(scope="function")
-async def tenant_admin_auth(client: AsyncClient):
+async def tenant_admin_auth(client: AsyncClient, unique_id: int):
     """Create a tenant admin user and return auth headers."""
-    timestamp = int(datetime.now().timestamp())
-    email = f"tenant-admin-{timestamp}@example.com"
+    email = f"tenant-admin-{unique_id}@example.com"
     password = "adminpass123"
-    tenant_name = f"TenantCorp-{timestamp}"
+    tenant_name = f"TenantCorp-{unique_id}"
 
     # Register (creates tenant + admin user)
     register_response = await client.post(
@@ -46,6 +45,7 @@ async def tenant_admin_auth(client: AsyncClient):
         "user_id": user_data["id"],
         "tenant_id": user_data["tenant_id"],
         "email": email,
+        "unique_id": unique_id,
     }
 
 
@@ -102,13 +102,13 @@ async def test_tenant_jobs_endpoint_filters_by_tenant(client: AsyncClient):
         "/api/v1/auth/register",
         json={
             "email": f"admin1-{timestamp}@test.com",
-            "password": "pass123",
+            "password": "password123",
             "tenant_name": f"Tenant1-{timestamp}",
         },
     )
     token1_response = await client.post(
         "/api/v1/auth/token",
-        json={"email": f"admin1-{timestamp}@test.com", "password": "pass123"},
+        json={"email": f"admin1-{timestamp}@test.com", "password": "password123"},
     )
     token1 = token1_response.json()["access_token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
@@ -118,13 +118,13 @@ async def test_tenant_jobs_endpoint_filters_by_tenant(client: AsyncClient):
         "/api/v1/auth/register",
         json={
             "email": f"admin2-{timestamp}@test.com",
-            "password": "pass123",
+            "password": "password123",
             "tenant_name": f"Tenant2-{timestamp}",
         },
     )
     token2_response = await client.post(
         "/api/v1/auth/token",
-        json={"email": f"admin2-{timestamp}@test.com", "password": "pass123"},
+        json={"email": f"admin2-{timestamp}@test.com", "password": "password123"},
     )
     token2 = token2_response.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
