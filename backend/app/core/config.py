@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -55,6 +56,26 @@ class Settings(BaseSettings):
     # Seed
     seed_customers: int = 500
     seed_subscriptions: int = 1200
+
+    @field_validator("minio_endpoint")
+    @classmethod
+    def validate_minio_endpoint(cls, v: str) -> str:
+        """Validate that MinIO endpoint includes protocol (http:// or https://)."""
+        if v and not v.startswith(("http://", "https://")):
+            raise ValueError(
+                f"MINIO_ENDPOINT must start with http:// or https://, got: {v}"
+            )
+        return v
+
+    @field_validator("minio_public_endpoint")
+    @classmethod
+    def validate_minio_public_endpoint(cls, v: str | None) -> str | None:
+        """Validate that MinIO public endpoint includes protocol if set."""
+        if v and not v.startswith(("http://", "https://")):
+            raise ValueError(
+                f"MINIO_PUBLIC_ENDPOINT must start with http:// or https://, got: {v}"
+            )
+        return v
 
 
 @lru_cache()
